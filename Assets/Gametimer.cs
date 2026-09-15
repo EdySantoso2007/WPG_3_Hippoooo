@@ -4,18 +4,27 @@ using TMPro;
 public class GameTimer : MonoBehaviour
 {
     [Header("Pengaturan Waktu")]
-    public float timeRemaining = 180f;
+    public float timeRemaining = 180f; // 180 detik = 3 menit
     public bool timerIsRunning = false;
 
     [Header("UI Referensi")]
     public TMP_Text timeText;
     public GameObject playButton;
+    public GameObject timeUpText; // Tulisan Waktu Habis
 
     void Start()
     {
-        // Memastikan waktu game berjalan normal di awal
-        Time.timeScale = 1f;
+        // BEKUKAN GAME SEJAK AWAL agar tidak ada yang colong start sebelum tombol ditekan
+        Time.timeScale = 0f;
+
+        // Tampilkan angka awal (03:00)
         DisplayTime(timeRemaining);
+
+        // Sembunyikan tulisan waktu habis saat game baru mulai
+        if (timeUpText != null)
+        {
+            timeUpText.SetActive(false);
+        }
     }
 
     void Update()
@@ -24,18 +33,25 @@ public class GameTimer : MonoBehaviour
         {
             if (timeRemaining > 0)
             {
+                // Kurangi waktu setiap detiknya (berdasarkan frame)
                 timeRemaining -= Time.deltaTime;
                 DisplayTime(timeRemaining);
             }
             else
             {
-                // Waktu Habis!
+                // Waktu habis
                 timeRemaining = 0;
                 timerIsRunning = false;
                 DisplayTime(timeRemaining);
 
-                // MENGHENTIKAN SEMUA PERGERAKAN GAME
+                // MENGHENTIKAN SEMUA PERGERAKAN GAME (Freeze)
                 Time.timeScale = 0f;
+
+                // Munculkan tulisan WAKTU HABIS
+                if (timeUpText != null)
+                {
+                    timeUpText.SetActive(true);
+                }
 
                 Debug.Log("Waktu Habis! Game Berhenti Total.");
             }
@@ -44,21 +60,28 @@ public class GameTimer : MonoBehaviour
 
     void DisplayTime(float timeToDisplay)
     {
-        if (timeToDisplay < 0) timeToDisplay = 0;
+        if (timeToDisplay < 0)
+        {
+            timeToDisplay = 0;
+        }
 
+        // Menghitung jumlah menit dan detik
         float minutes = Mathf.FloorToInt(timeToDisplay / 60);
         float seconds = Mathf.FloorToInt(timeToDisplay % 60);
 
+        // Menampilkan format angka dengan dua digit, misal: 03:00
         timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
     }
 
+    // Fungsi ini dipanggil saat UI Tombol PLAY ditekan
     public void StartTimer()
     {
         timerIsRunning = true;
 
-        // Memastikan game bergerak saat tombol Play ditekan
+        // CAIRKAN GAME (Game mulai berjalan normal)
         Time.timeScale = 1f;
 
+        // Sembunyikan tombol setelah ditekan agar layar bersih
         if (playButton != null)
         {
             playButton.SetActive(false);
