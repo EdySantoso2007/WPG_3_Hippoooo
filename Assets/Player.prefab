@@ -540,3 +540,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 5
   rotationSpeed: 15
+  dashForce: 15
+  dashDuration: 0.2
+  dashCooldown: 3
+  bumpForce: 15
+  playerKnockback: 3
+  stunDuration: 2
+  isStunned: 0

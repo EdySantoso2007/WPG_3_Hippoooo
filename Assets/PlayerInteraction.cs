@@ -20,6 +20,10 @@ public class PlayerInteraction : MonoBehaviour
 
     void Update()
     {
+        // CEK STUN: Jika sedang stun, batalkan semua perintah interaksi
+        PlayerMovement pm = GetComponent<PlayerMovement>();
+        if (pm != null && pm.isStunned) return;
+
         if (interactAction != null && interactAction.WasPressedThisFrame())
         {
             // Jika sedang di dalam area Drop Zone
@@ -107,28 +111,28 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    // ---------------------------------------------------------
-    // FUNGSI BARU: Dipanggil saat ditabrak (Dash) oleh pemain lain
-    // ---------------------------------------------------------
+    // Dipanggil saat ditabrak (Dash) oleh pemain lain
     public void ForceDropBox(Vector3 throwForce)
     {
         if (carriedBox != null)
         {
-            // Lepaskan kotak dari tangan
             carriedBox.transform.SetParent(null);
+
+            // FIX LEDAKAN FISIKA: Geser kotak sedikit ke atas kepala player
+            // agar fisika kotaknya tidak menabrak badan player sendiri dari dalam
+            carriedBox.transform.position = transform.position + new Vector3(0f, 1.5f, 0f);
 
             Rigidbody rb = carriedBox.GetComponent<Rigidbody>();
             if (rb != null)
             {
                 rb.isKinematic = false;
-                // Lempar kotaknya sesuai kekuatan pantulan dari pemain yang menabrak
                 rb.AddForce(throwForce, ForceMode.Impulse);
             }
 
             Collider col = carriedBox.GetComponent<Collider>();
             if (col != null) col.enabled = true;
 
-            carriedBox.tag = "Box"; // Kembalikan tag-nya menjadi Box agar bisa diambil lagi
+            carriedBox.tag = "Box";
             carriedBox = null;
         }
     }

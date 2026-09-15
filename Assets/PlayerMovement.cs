@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections; // Ditambahkan untuk sistem Coroutine (Waktu tunggu)
+using System.Collections;
 
 [RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
@@ -9,36 +9,40 @@ public class PlayerMovement : MonoBehaviour
     public float moveSpeed = 5f;
     public float rotationSpeed = 15f;
 
-    [Header("Pengaturan Dash")]
-    public float dashForce = 15f;      // Kecepatan melesat
-    public float dashDuration = 0.2f;  // Lama waktu melesat
-    public float dashCooldown = 3f;    // Waktu tunggu sebelum bisa dash lagi
-    public float bumpForce = 12f;      // Kekuatan memental kotak musuh
+    [Header("Pengaturan Dash & Tabrakan")]
+    public float dashForce = 15f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 3f;
+    public float bumpForce = 12f;         // Kekuatan memental kotak musuh
+    public float playerKnockback = 2f;    // Kekuatan pentalan tubuh player
+    public float stunDuration = 2f;       // Lama waktu stun
 
     private bool isDashing = false;
-    private float lastDashTime = -5f; // Diatur minus agar saat awal main langsung bisa dash
+    [HideInInspector] public bool isStunned = false;
+    private float lastDashTime = -5f;
 
     private Rigidbody rb;
     private Vector2 moveInput;
     private PlayerInput playerInput;
     private InputAction moveAction;
-    private InputAction dashAction; // Variabel baru untuk tombol Dash
+    private InputAction dashAction;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         playerInput = GetComponent<PlayerInput>();
         moveAction = playerInput.actions["Move"];
-
-        // Mengambil aksi Dash dari Input System
         dashAction = playerInput.actions["Dash"];
     }
 
     void Update()
     {
+        if (Time.timeScale == 0f || isStunned) return;
+
+        if (rb.IsSleeping()) rb.WakeUp();
+
         moveInput = moveAction.ReadValue<Vector2>();
 
-        // Mengecek apakah tombol Dash ditekan DAN cooldown sudah selesai
         if (dashAction != null && dashAction.WasPressedThisFrame())
         {
             if (Time.time >= lastDashTime + dashCooldown && !isDashing)
@@ -50,18 +54,18 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Jika sedang dash, jangan gunakan pergerakan normal
+        if (Time.timeScale == 0f || isStunned) return;
+
         if (isDashing)
         {
-            // Melesat ke arah depan karakter
             rb.linearVelocity = transform.forward * dashForce;
-            return; // Lewati kode pergerakan di bawah
+            return;
         }
 
-        // 1. Sistem Pergerakan Normal
+        // Pergerakan Normal
         rb.linearVelocity = new Vector3(moveInput.x * moveSpeed, rb.linearVelocity.y, moveInput.y * moveSpeed);
 
-        // 2. Sistem Rotasi Normal
+        // Rotasi Normal
         Vector3 moveDirection = new Vector3(moveInput.x, 0f, moveInput.y);
         if (moveDirection != Vector3.zero)
         {
@@ -70,35 +74,52 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    // Sistem pengatur waktu melesat
     private IEnumerator PerformDash()
     {
         isDashing = true;
-        lastDashTime = Time.time; // Catat waktu kapan dash dilakukan
-
-        yield return new WaitForSeconds(dashDuration); // Tunggu sepersekian detik
-
-        isDashing = false; // Berhenti melesat
+        lastDashTime = Time.time;
+        yield return new WaitForSeconds(dashDuration);
+        isDashing = false;
     }
 
-    // Mendeteksi tabrakan saat bermain
     void OnCollisionEnter(Collision collision)
     {
-        // Jika kita KITA yang sedang dash, dan menabrak PEMAIN LAIN
         if (isDashing && collision.gameObject.CompareTag("Player"))
         {
-            // Ambil script Interaksi milik pemain yang ditabrak
-            PlayerInteraction otherPlayer = collision.gameObject.GetComponent<PlayerInteraction>();
+            PlayerMovement otherMovement = collision.gameObject.GetComponent<PlayerMovement>();
 
-            if (otherPlayer != null)
+            // Pastikan musuh belum dalam keadaan stun untuk mencegah tabrakan beruntun
+            if (otherMovement != null && !otherMovement.isStunned)
             {
-                // Hitung arah pantulan (Menjauh dari kita, dan agak melambung ke atas)
-                Vector3 bumpDirection = (collision.transform.position - transform.position).normalized;
-                bumpDirection.y = 1.5f; // Efek melambung ke atas
+                PlayerInteraction otherPlayer = collision.gameObject.GetComponent<PlayerInteraction>();
 
-                // Paksa pemain lain menjatuhkan kotaknya dengan kekuatan pantulan
-                otherPlayer.ForceDropBox(bumpDirection * bumpForce);
+                Vector3 bumpDirection = (collision.transform.position - transform.position).normalized;
+                bumpDirection.y = 1.2f;
+
+                if (otherPlayer != null)
+                {
+                    otherPlayer.ForceDropBox(bumpDirection * bumpForce);
+                }
+
+                otherMovement.TakeHitAndStun(bumpDirection * playerKnockback, stunDuration);
             }
         }
+    }
+
+    public void TakeHitAndStun(Vector3 knockbackForce, float duration)
+    {
+        StartCoroutine(StunRoutine(knockbackForce, duration));
+    }
+
+    private IEnumerator StunRoutine(Vector3 knockbackForce, float duration)
+    {
+        isStunned = true;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.AddForce(knockbackForce, ForceMode.Impulse);
+
+        yield return new WaitForSeconds(duration);
+
+        isStunned = false;
     }
 }
