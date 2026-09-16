@@ -34,7 +34,6 @@ public class PlayerInteraction : MonoBehaviour
                 {
                     currentDropZone.AddBox(carriedBox);
 
-                    // Lepas kotak dari holdPoint agar tidak ikut bergerak mengikuti karakter
                     carriedBox.transform.SetParent(null);
                     carriedBox = null;
                 }
@@ -45,8 +44,11 @@ public class PlayerInteraction : MonoBehaviour
                     if (stolenBox != null)
                     {
                         carriedBox = stolenBox;
-                        carriedBox.transform.position = holdPoint.position;
+
+                        // FIX POSISI: Jadikan child dulu, lalu samakan posisinya dengan Hold Point
                         carriedBox.transform.SetParent(holdPoint);
+                        carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
+                        carriedBox.transform.localRotation = Quaternion.identity;
                     }
                 }
             }
@@ -57,13 +59,15 @@ public class PlayerInteraction : MonoBehaviour
                 if (carriedBox == null && boxToPickUp != null)
                 {
                     carriedBox = boxToPickUp;
-                    boxToPickUp = null; // Reset referensi agar tidak tersangkut
+                    boxToPickUp = null;
 
                     carriedBox.GetComponent<Rigidbody>().isKinematic = true;
                     carriedBox.GetComponent<Collider>().enabled = false;
 
-                    carriedBox.transform.position = holdPoint.position;
+                    // FIX POSISI: Jadikan child dulu, lalu samakan posisinya dengan Hold Point
                     carriedBox.transform.SetParent(holdPoint);
+                    carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
+                    carriedBox.transform.localRotation = Quaternion.identity;
                 }
                 // Jatuhkan kotak ke lantai
                 else if (carriedBox != null)
@@ -118,8 +122,6 @@ public class PlayerInteraction : MonoBehaviour
         {
             carriedBox.transform.SetParent(null);
 
-            // FIX LEDAKAN FISIKA: Geser kotak sedikit ke atas kepala player
-            // agar fisika kotaknya tidak menabrak badan player sendiri dari dalam
             carriedBox.transform.position = transform.position + new Vector3(0f, 1.5f, 0f);
 
             Rigidbody rb = carriedBox.GetComponent<Rigidbody>();
