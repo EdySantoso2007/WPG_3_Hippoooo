@@ -834,6 +834,94 @@
                     "isPartOfComposite": false
                 }
             ]
+        },
+        {
+            "name": "Rhythm",
+            "id": "228066a6-95b7-402b-8ec4-c86cd95a9e07",
+            "actions": [
+                {
+                    "name": "HitA",
+                    "type": "Button",
+                    "id": "c0d499ed-e0b9-44d7-952a-157d8e526973",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "HitX",
+                    "type": "Button",
+                    "id": "d6d29317-e55a-4de3-a427-28ee735bb091",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "HitB",
+                    "type": "Button",
+                    "id": "6a50b513-5cb9-433d-8d3d-22ca527ec239",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "HitY",
+                    "type": "Button",
+                    "id": "aaeb1519-fd72-410e-9874-589601038982",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "b3553e47-05b2-4e52-88a5-aed43088729a",
+                    "path": "<Gamepad>/buttonSouth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "HitA",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "df989605-91e1-4be0-b2b7-21396699eb46",
+                    "path": "<Gamepad>/buttonEast",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "HitX",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b33d503a-676d-47e0-ac60-9297dd88d4dd",
+                    "path": "<Gamepad>/buttonEast",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "HitB",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "39c43bb2-648e-4bfc-8dd3-80f7850a37f9",
+                    "path": "<Gamepad>/buttonNorth",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Gamepad",
+                    "action": "HitY",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
         }
     ],
     "controlSchemes": [
