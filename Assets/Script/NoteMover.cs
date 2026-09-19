@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class NoteMover : MonoBehaviour
 {
-    public float speed = 3f; // Atur kecepatan naik nada di sini
+    public float speed = 3f;
 
     void Update()
     {
-        // Vector3.up akan mendorong nada ke atas (Sumbu Y positif)
-        transform.Translate(Vector3.up * speed * Time.deltaTime);
+        // Ubah menjadi Vector3.down agar nada jatuh dari atas ke bawah
+        transform.Translate(Vector3.down * speed * Time.deltaTime);
     }
 }

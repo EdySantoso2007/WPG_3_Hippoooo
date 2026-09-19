@@ -5,11 +5,11 @@ public class RhythmController : MonoBehaviour
 {
     private PlayerInput playerInput;
 
-    [Header("Hubungkan 4 Kotak Target (HitZone) di sini")]
-    public HitZone jalur1Zone; // Tombol A (HitA)
-    public HitZone jalur2Zone; // Tombol X (HitX)
-    public HitZone jalur3Zone; // Tombol B (HitB)
-    public HitZone jalur4Zone; // Tombol Y (HitY)
+    // Tidak perlu public lagi karena akan dicari otomatis oleh script
+    private HitZone jalur1Zone;
+    private HitZone jalur2Zone;
+    private HitZone jalur3Zone;
+    private HitZone jalur4Zone;
 
     private InputAction hitAAction;
     private InputAction hitXAction;
@@ -22,14 +22,32 @@ public class RhythmController : MonoBehaviour
 
         if (playerInput != null)
         {
-            // Pindah ke mode Rhythm (mematikan tombol jalan/interaksi)
             playerInput.SwitchCurrentActionMap("Rhythm");
 
-            // Menyambungkan dengan Action di Input System
             hitAAction = playerInput.actions["HitA"];
             hitXAction = playerInput.actions["HitX"];
             hitBAction = playerInput.actions["HitB"];
             hitYAction = playerInput.actions["HitY"];
+
+            // ==== SISTEM PENCARI OTOMATIS (MULTIPLAYER) ====
+            // playerIndex dimulai dari 0 (P1), jadi kita tambah 1 agar menjadi 1, 2, 3, 4
+            int pcID = playerInput.playerIndex + 1;
+
+            // Script otomatis mencari jalur di Hierarchy berdasarkan nama PC
+            GameObject targetA = GameObject.Find("PC" + pcID + "/TargetA");
+            if(targetA != null) jalur1Zone = targetA.GetComponent<HitZone>();
+
+            GameObject targetX = GameObject.Find("PC" + pcID + "/TargetX");
+            if(targetX != null) jalur2Zone = targetX.GetComponent<HitZone>();
+
+            GameObject targetB = GameObject.Find("PC" + pcID + "/TargetB");
+            if(targetB != null) jalur3Zone = targetB.GetComponent<HitZone>();
+
+            GameObject targetY = GameObject.Find("PC" + pcID + "/TargetY");
+            if(targetY != null) jalur4Zone = targetY.GetComponent<HitZone>();
+            // ===============================================
+
+            Debug.Log("Player " + pcID + " berhasil terhubung ke PC" + pcID);
         }
     }
 
@@ -47,14 +65,5 @@ public class RhythmController : MonoBehaviour
         else if (jalur == 2 && jalur2Zone != null) jalur2Zone.AttemptHit();
         else if (jalur == 3 && jalur3Zone != null) jalur3Zone.AttemptHit();
         else if (jalur == 4 && jalur4Zone != null) jalur4Zone.AttemptHit();
-    }
-
-    // Panggil fungsi ini jika minigame selesai agar player bisa jalan lagi
-    public void SelesaiMainRhythm()
-    {
-        if (playerInput != null)
-        {
-            playerInput.SwitchCurrentActionMap("Player");
-        }
     }
 }
