@@ -758,6 +758,7 @@ GameObject:
   - component: {fileID: 343639637}
   - component: {fileID: 343639636}
   - component: {fileID: 343639635}
+  - component: {fileID: 343639638}
   m_Layer: 5
   m_Name: QTE_Canvas
   m_TagString: Untagged
@@ -848,6 +849,53 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &343639638
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 343639633}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae16adf4818c054fbf5f175371461c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QTEManager
+  notePrefabs:
+  - {fileID: 2623116441819965958, guid: bbc3927ddc75c40459f7114c2c088c4c, type: 3}
+  - {fileID: 4049264205458653173, guid: 333f59ba7d9998a45a59c923f956989b, type: 3}
+  - {fileID: 2778621727398927852, guid: 1d357d37d698a06449541073436c1dfb, type: 3}
+  - {fileID: 8721283132214551481, guid: 23db481048f5578469902eceb38a898f, type: 3}
+  qteContainer: {fileID: 1088491187}
+  qteLength: 5
+  batasMaksimal: 8
+--- !u!1 &377948213 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+  m_PrefabInstance: {fileID: 1902697964}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &377948214
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377948213}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1654167623372299304, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!1001 &390950329
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -915,7 +963,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1350888071}
   m_SourcePrefab: {fileID: 100100000, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!1001 &430205945
 PrefabInstance:
@@ -1371,6 +1422,7 @@ GameObject:
   - component: {fileID: 576471059}
   - component: {fileID: 576471058}
   - component: {fileID: 576471057}
+  - component: {fileID: 576471060}
   m_Layer: 5
   m_Name: QTE_Canvas
   m_TagString: Untagged
@@ -1461,6 +1513,26 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &576471060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 576471055}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae16adf4818c054fbf5f175371461c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QTEManager
+  notePrefabs:
+  - {fileID: 2623116441819965958, guid: bbc3927ddc75c40459f7114c2c088c4c, type: 3}
+  - {fileID: 4049264205458653173, guid: 333f59ba7d9998a45a59c923f956989b, type: 3}
+  - {fileID: 2778621727398927852, guid: 1d357d37d698a06449541073436c1dfb, type: 3}
+  - {fileID: 8721283132214551481, guid: 23db481048f5578469902eceb38a898f, type: 3}
+  qteContainer: {fileID: 1206502232}
+  qteLength: 5
+  batasMaksimal: 8
 --- !u!1 &599687901
 GameObject:
   m_ObjectHideFlags: 0
@@ -1915,17 +1987,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af18fc472a9ad15469c62c779a61a1e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RhythmManager
-  notePrefabs:
-  - {fileID: 384129306126060284, guid: 14cf05e7191089943815f60007adbcbf, type: 3}
-  - {fileID: 384129306126060284, guid: 1c26cdb8d4644464783057c0ddc2e543, type: 3}
-  - {fileID: 384129306126060284, guid: 48fc11c13939830458631c8879570000, type: 3}
-  - {fileID: 384129306126060284, guid: 7be54882b3d7aec499389e1533c0ae9b, type: 3}
-  spawnPoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  spawnInterval: 1
 --- !u!4 &825926823
 Transform:
   m_ObjectHideFlags: 0
@@ -2355,6 +2416,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7c847495bcfc07a45b1764c4bf6ac9bd, type: 3}
   m_PrefabInstance: {fileID: 985586141}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &994165992 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+  m_PrefabInstance: {fileID: 1922955712}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1003932960
 GameObject:
   m_ObjectHideFlags: 0
@@ -2446,6 +2512,7 @@ GameObject:
   - component: {fileID: 1007364994}
   - component: {fileID: 1007364993}
   - component: {fileID: 1007364992}
+  - component: {fileID: 1007364995}
   m_Layer: 5
   m_Name: QTE_Canvas
   m_TagString: Untagged
@@ -2536,6 +2603,26 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1007364995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1007364990}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae16adf4818c054fbf5f175371461c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QTEManager
+  notePrefabs:
+  - {fileID: 2623116441819965958, guid: bbc3927ddc75c40459f7114c2c088c4c, type: 3}
+  - {fileID: 4049264205458653173, guid: 333f59ba7d9998a45a59c923f956989b, type: 3}
+  - {fileID: 2778621727398927852, guid: 1d357d37d698a06449541073436c1dfb, type: 3}
+  - {fileID: 8721283132214551481, guid: 23db481048f5578469902eceb38a898f, type: 3}
+  qteContainer: {fileID: 834228133}
+  qteLength: 5
+  batasMaksimal: 8
 --- !u!1 &1012297494
 GameObject:
   m_ObjectHideFlags: 0
@@ -2548,6 +2635,7 @@ GameObject:
   - component: {fileID: 1012297498}
   - component: {fileID: 1012297497}
   - component: {fileID: 1012297496}
+  - component: {fileID: 1012297499}
   m_Layer: 5
   m_Name: QTE_Canvas
   m_TagString: Untagged
@@ -2638,6 +2726,26 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1012297499
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1012297494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ae16adf4818c054fbf5f175371461c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::QTEManager
+  notePrefabs:
+  - {fileID: 2623116441819965958, guid: bbc3927ddc75c40459f7114c2c088c4c, type: 3}
+  - {fileID: 4049264205458653173, guid: 333f59ba7d9998a45a59c923f956989b, type: 3}
+  - {fileID: 2778621727398927852, guid: 1d357d37d698a06449541073436c1dfb, type: 3}
+  - {fileID: 8721283132214551481, guid: 23db481048f5578469902eceb38a898f, type: 3}
+  qteContainer: {fileID: 1960261332}
+  qteLength: 5
+  batasMaksimal: 8
 --- !u!1001 &1018080456
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3398,6 +3506,33 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 38d926efedb3df142ba1b0d2e86e4793, type: 3}
   m_PrefabInstance: {fileID: 1229230153}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1350888070 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+  m_PrefabInstance: {fileID: 390950329}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &1350888071
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1350888070}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1654167623372299304, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!1001 &1370227710
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4659,7 +4794,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 377948214}
   m_SourcePrefab: {fileID: 100100000, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!1001 &1922955712
 PrefabInstance:
@@ -4851,13 +4989,38 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1229230154}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1922955714}
   m_SourcePrefab: {fileID: 100100000, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!4 &1922955713 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
   m_PrefabInstance: {fileID: 1922955712}
   m_PrefabAsset: {fileID: 0}
+--- !u!64 &1922955714
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 994165992}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1654167623372299304, guid: f56a657c38b37f14a9eb9ec77c7ca098, type: 3}
 --- !u!1001 &1955225545
 PrefabInstance:
   m_ObjectHideFlags: 0
