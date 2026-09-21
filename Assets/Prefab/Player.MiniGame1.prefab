@@ -272,7 +272,7 @@ GameObject:
   - component: {fileID: 7348807263137030204}
   - component: {fileID: 8188308533249391898}
   - component: {fileID: -4213036541888136267}
-  - component: {fileID: 5401711849296440756}
+  - component: {fileID: 8882785441732263666}
   m_Layer: 0
   m_Name: Player.MiniGame1
   m_TagString: Player
@@ -458,7 +458,7 @@ MonoBehaviour:
     m_ActionName: Rhythm/HitY
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 228066a6-95b7-402b-8ec4-c86cd95a9e07
+  m_DefaultActionMap: Rhythm
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!114 &3020311281651854317
@@ -566,7 +566,7 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &5401711849296440756
+--- !u!114 &8882785441732263666
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -575,10 +575,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 9111024016014653155}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 361154ac7d383234dab9f51bb2cf0240, type: 3}
+  m_Script: {fileID: 11500000, guid: 98069a6ff216f3744b3c35abddcba4ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RhythmController
-  jalur1Zone: {fileID: 0}
-  jalur2Zone: {fileID: 0}
-  jalur3Zone: {fileID: 0}
-  jalur4Zone: {fileID: 0}
+  myQTEManager: {fileID: 0}
