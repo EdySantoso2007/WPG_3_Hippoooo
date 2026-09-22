@@ -5,12 +5,18 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
-    path: Assets/Scenes/MiniGame2.unity
-    guid: 66764b965b2edeb42a6fcc14f3d3b897
   - enabled: 0
     path: Assets/Scenes/Prototypr.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Main Menu.unity
+    guid: 6a54d552ad254b24b8c33aa37c955826
+  - enabled: 1
+    path: Assets/Scenes/MiniGame1.unity
+    guid: f148480ab98c4f04d870cba52a3d447d
+  - enabled: 1
+    path: Assets/Scenes/MiniGame2.unity
+    guid: 66764b965b2edeb42a6fcc14f3d3b897
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
