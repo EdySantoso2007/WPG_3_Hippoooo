@@ -5,17 +5,19 @@ using UnityEngine.UI;
 
 // Ditempel di GameObject YANG SAMA dengan komponen PlayerInputManager.
 //
-// Setting wajib di komponen PlayerInputManager (Inspector):
+// PENTING - Setting di komponen PlayerInputManager (Inspector):
+// - Player Prefab       : isi dengan prefab PLACEHOLDER kosong (cukup ada
+//   komponen PlayerInput saja, TANPA Renderer/visual apapun). Prefab ini
+//   cuma numpang lewat untuk mendeteksi device yang join, lalu langsung
+//   dihancurkan di OnPlayerJoined di bawah - jadi TIDAK akan kelihatan.
 // - Notification Behavior : Send Messages
-//   (supaya method OnPlayerJoined di bawah ini otomatis terpanggil)
-// - Joining Behavior       : sesuaikan kebutuhan
-//   (mis. "Join Players When Button Is Pressed", biar player pencet
-//    tombol apapun di controller-nya untuk join room)
+// - Joining Behavior      : sesuai kebutuhan (mis. Join Action Is Triggered,
+//   sesuai binding E/Kotak/X yang sudah di-setup)
 [RequireComponent(typeof(PlayerInputManager))]
 public class RoomManager : MonoBehaviour
 {
     [Header("Scene Tujuan")]
-    [Tooltip("Nama scene gameplay yang di-load setelah tombol START ditekan")]
+    [Tooltip("Nama scene minigame yang di-load setelah tombol START ditekan")]
     public string gameSceneName = "MainScenery";
 
     [Header("UI Checklist (urutan WAJIB: Merah, Biru, Hijau, Kuning)")]
@@ -50,8 +52,9 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    // Dipanggil OTOMATIS oleh PlayerInputManager (Notification Behavior: Send Messages)
-    // setiap kali ada controller/device baru yang join ke room.
+    // Dipanggil OTOMATIS oleh PlayerInputManager tiap ada device baru yang join.
+    // "playerInput" di sini cuma placeholder kosong (lihat catatan di atas)
+    // -> catat info device-nya saja, JANGAN dianggap sebagai player asli.
     public void OnPlayerJoined(PlayerInput playerInput)
     {
         if (gameStarting) return;
@@ -64,11 +67,17 @@ public class RoomManager : MonoBehaviour
         }
 
         int index = RoomBridge.JoinedPlayers.Count;
-        RoomBridge.JoinedPlayers.Add(playerInput);
 
-        // Player ini akan ikut pindah ke scene gameplay, jangan sampai
-        // dihancurkan otomatis saat scene lobby di-unload
-        DontDestroyOnLoad(playerInput.gameObject);
+        // Simpan HANYA data control scheme & device fisiknya, bukan gameobject-nya
+        RoomBridge.JoinedPlayers.Add(new JoinedPlayerData
+        {
+            controlScheme = playerInput.currentControlScheme,
+            devices = playerInput.devices.ToArray()
+        });
+
+        // Placeholder ini tugasnya sudah selesai (cuma buat deteksi join),
+        // langsung hancurkan supaya tidak ada apapun yang muncul di layar
+        Destroy(playerInput.gameObject);
 
         // Nyalakan icon check sesuai urutan warna join: Merah, Biru, Hijau, Kuning
         if (checkIcons[index] != null)
@@ -82,7 +91,7 @@ public class RoomManager : MonoBehaviour
             startButton.interactable = true;
         }
 
-        Debug.Log($"Player join ke room, urutan ke-{index + 1} ({playerInput.currentControlScheme})");
+        Debug.Log($"Device join ke room, urutan ke-{index + 1}, control scheme: {playerInput.currentControlScheme}");
     }
 
     // Dipanggil dari tombol START (sudah di-wire otomatis lewat AddListener di Awake)
@@ -98,9 +107,8 @@ public class RoomManager : MonoBehaviour
             playerInputManager.DisableJoining();
         }
 
-        // Load scene gameplay. RoomManager & PlayerInputManager di scene ini
-        // otomatis ikut dihancurkan Unity karena tidak di-DontDestroyOnLoad,
-        // sedangkan player yang sudah join (RoomBridge.JoinedPlayers) tetap ada.
+        // Load scene minigame. Prefab player yang sesungguhnya baru akan
+        // di-spawn di sana oleh PlayerManager, berdasarkan RoomBridge.JoinedPlayers
         SceneManager.LoadScene(gameSceneName);
     }
 }

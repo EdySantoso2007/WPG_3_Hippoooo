@@ -9,8 +9,8 @@ public class BoxStorage : MonoBehaviour
     public float spacing = 1.2f;
     public int boxesPerRow = 3;
 
-    [Header("UI Skor 3D")]
-    public TMP_Text scoreText; // Referensi untuk teks 3D TextMeshPro di atas storage
+    [Header("UI Skor 2D")]
+    public TextMeshProUGUI scoreText; // Referensi untuk teks 2D (Canvas UI) skor
 
     // Menyimpan daftar kotak agar bisa ditarik kembali
     private List<GameObject> storedBoxes = new List<GameObject>();
