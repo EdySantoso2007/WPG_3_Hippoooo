@@ -4,6 +4,11 @@ using System.Collections.Generic;
 
 public class PlayerManager : MonoBehaviour
 {
+    [Header("Prefab Player")]
+    [Tooltip("Prefab player ASLI (dengan visual, Renderer, RhythmController, dll). " +
+             "Ini prefab yang DULU dipasang di PlayerInputManager - sekarang pindah ke sini.")]
+    public GameObject playerPrefab;
+
     [Header("Pengaturan Spawn")]
     public List<Transform> spawnPoints;
 
@@ -13,12 +18,43 @@ public class PlayerManager : MonoBehaviour
 
     private int playersJoined = 0;
 
-    // Fungsi ini dipanggil otomatis oleh PlayerInputManager saat player baru masuk
+    private void Start()
+    {
+        // Spawn player asli sesuai data device yang sudah dicatat waktu join
+        // di scene Room/Lobby (lewat RoomManager), urut sesuai urutan join.
+        foreach (JoinedPlayerData data in RoomBridge.JoinedPlayers)
+        {
+            SpawnPlayer(data);
+        }
+    }
+
+    // Tetap dipertahankan untuk kasus ada PlayerInputManager langsung di scene
+    // ini juga (mis. testing tanpa lewat Room/Lobby)
     public void OnPlayerJoined(PlayerInput playerInput)
     {
-        if (playersJoined >= 4)
+        SetupPlayer(playerInput);
+    }
+
+    private void SpawnPlayer(JoinedPlayerData data)
+    {
+        // Instantiate prefab asli, dipasangkan ke device fisik yang SAMA
+        // dengan waktu player itu join di room (biar controllernya nyambung
+        // ke player yang benar, bukan device lain)
+        PlayerInput playerInput = PlayerInput.Instantiate(
+            playerPrefab,
+            controlScheme: data.controlScheme,
+            pairWithDevices: data.devices
+        );
+
+        SetupPlayer(playerInput);
+    }
+
+    private void SetupPlayer(PlayerInput playerInput)
+    {
+        if (playersJoined >= spawnPoints.Count || playersJoined >= playerColors.Length)
         {
-            Debug.Log("Maksimal 4 Player!");
+            Debug.Log("Maksimal player sudah tercapai, atau spawnPoints kurang!");
+            Destroy(playerInput.gameObject);
             return;
         }
 

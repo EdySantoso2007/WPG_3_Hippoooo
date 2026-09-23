@@ -14,9 +14,6 @@ public class GameTimer : MonoBehaviour
 
     void Start()
     {
-        // BEKUKAN GAME SEJAK AWAL agar tidak ada yang colong start sebelum tombol ditekan
-        Time.timeScale = 0f;
-
         // Tampilkan angka awal (03:00)
         DisplayTime(timeRemaining);
 
@@ -25,6 +22,15 @@ public class GameTimer : MonoBehaviour
         {
             timeUpText.SetActive(false);
         }
+
+        // Tombol Play tidak dipakai lagi karena timer langsung jalan
+        if (playButton != null)
+        {
+            playButton.SetActive(false);
+        }
+
+        // Langsung jalankan timer tanpa menunggu tombol ditekan
+        StartTimer();
     }
 
     void Update()
@@ -73,15 +79,15 @@ public class GameTimer : MonoBehaviour
         timeText.text = string.Format("{0:00}:{1:00}", minutes, seconds);
     }
 
-    // Fungsi ini dipanggil saat UI Tombol PLAY ditekan
+    // Tetap dipertahankan (misal masih dipanggil dari tempat lain / testing),
+    // tapi sekarang juga dipanggil otomatis dari Start()
     public void StartTimer()
     {
         timerIsRunning = true;
 
-        // CAIRKAN GAME (Game mulai berjalan normal)
+        // Pastikan game berjalan normal (jaga-jaga kalau sebelumnya di-freeze)
         Time.timeScale = 1f;
 
-        // Sembunyikan tombol setelah ditekan agar layar bersih
         if (playButton != null)
         {
             playButton.SetActive(false);
