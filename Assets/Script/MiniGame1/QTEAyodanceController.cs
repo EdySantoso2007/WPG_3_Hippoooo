@@ -11,8 +11,8 @@ public class QTEAyodanceController : MonoBehaviour
     public int playerID = 1;
 
     [Header("Pengaturan Permainan")]
-    public int totalQueueLength = 5; // Jumlah balok yang muncul sekaligus
-    public int playerScore = 0; // Skor pemain saat ini
+    public int totalQueueLength = 5;
+    public int playerScore = 0;
 
     [Header("UI References (World Space Canvas)")]
     public Transform hudContainer;
@@ -27,26 +27,10 @@ public class QTEAyodanceController : MonoBehaviour
     private List<QTEKey> visibleQueue = new List<QTEKey>();
     private List<GameObject> spawnedIcons = new List<GameObject>();
 
-    private PlayerInput playerInput;
-    private InputAction hitAAction, hitXAction, hitBAction, hitYAction;
-
     void Start()
     {
-        SetupInputSystem();
+        // SetupInputSystem() sudah dihapus total agar tidak ada kebocoran sinyal
         StartQTE();
-    }
-
-    void SetupInputSystem()
-    {
-        playerInput = GetComponent<PlayerInput>();
-        if (playerInput != null)
-        {
-            playerInput.SwitchCurrentActionMap("Rhythm");
-            hitAAction = playerInput.actions["HitA"];
-            hitXAction = playerInput.actions["HitX"];
-            hitBAction = playerInput.actions["HitB"];
-            hitYAction = playerInput.actions["HitY"];
-        }
     }
 
     public void StartQTE()
@@ -86,17 +70,24 @@ public class QTEAyodanceController : MonoBehaviour
 
     QTEKey? CheckPlayerInput()
     {
-        // Membaca input dari PlayerInput yang sudah terikat per device masing-masing
-        if (playerInput != null)
+        // 1. JALUR GAMEPAD HARDWARE ABSOLUT (Tidak akan tertukar)
+        int gamepadIndex = playerID - 1;
+        if (Gamepad.all.Count > gamepadIndex)
         {
-            if (hitAAction != null && hitAAction.WasPressedThisFrame()) return QTEKey.A;
-            if (hitXAction != null && hitXAction.WasPressedThisFrame()) return QTEKey.X;
-            if (hitBAction != null && hitBAction.WasPressedThisFrame()) return QTEKey.B;
-            if (hitYAction != null && hitYAction.WasPressedThisFrame()) return QTEKey.Y;
+            Gamepad myGamepad = Gamepad.all[gamepadIndex];
+
+            // Pastikan gamepad tersebut benar-benar aktif
+            if (myGamepad != null)
+            {
+                if (myGamepad.buttonSouth.wasPressedThisFrame) return QTEKey.A;
+                if (myGamepad.buttonWest.wasPressedThisFrame) return QTEKey.X;
+                if (myGamepad.buttonEast.wasPressedThisFrame) return QTEKey.B;
+                if (myGamepad.buttonNorth.wasPressedThisFrame) return QTEKey.Y;
+            }
         }
 
-        // Jalur Keyboard khusus untuk testing solo (dipisah berdasarkan playerID)
-        if (Keyboard.current != null && playerInput == null)
+        // 2. JALUR KEYBOARD SPESIFIK (Sebagai cadangan test di Editor)
+        if (Keyboard.current != null)
         {
             if (playerID == 1)
             {
@@ -134,7 +125,6 @@ public class QTEAyodanceController : MonoBehaviour
         {
             GameObject obj = Instantiate(iconPrefab, hudContainer);
 
-            // Kode penyelamat skala agar tidak meluber ke bawah
             obj.transform.localScale = Vector3.one;
             obj.transform.localPosition = new Vector3(obj.transform.localPosition.x, obj.transform.localPosition.y, 0f);
 
