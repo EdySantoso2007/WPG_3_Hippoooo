@@ -36,6 +36,11 @@ public class RoomManager : MonoBehaviour
     [Tooltip("Minimal jumlah player yang harus join sebelum tombol Start bisa ditekan")]
     public int minPlayersToStart = 1;
 
+    [Header("Panel Room")]
+    [Tooltip("Panel room di Canvas. Begitu panel ini aktif (dibuka lewat mouse/keyboard/controller), " +
+             "joining otomatis dibuka - tidak perlu wiring ActivateRoom() manual lagi.")]
+    public GameObject roomPanel;
+
     private PlayerInputManager playerInputManager;
     private bool gameStarting = false;
     private bool roomActive = false; // true setelah ActivateRoom() dipanggil
@@ -81,6 +86,13 @@ public class RoomManager : MonoBehaviour
     private void Update()
     {
         if (gameStarting) return;
+
+        // Otomatis buka joining begitu panel room aktif, apapun input yang
+        // dipakai untuk membukanya (klik mouse, keyboard, atau controller)
+        if (!roomActive && roomPanel != null && roomPanel.activeInHierarchy)
+        {
+            ActivateRoom();
+        }
 
         // A = Start (hanya jika syarat minimal player sudah terpenuhi)
         var gamepad = Gamepad.current;

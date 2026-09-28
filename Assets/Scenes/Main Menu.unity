@@ -1078,6 +1078,7 @@ MonoBehaviour:
   - {fileID: 415543238}
   startButton: {fileID: 1962590117}
   minPlayersToStart: 1
+  roomPanel: {fileID: 2074928363}
 --- !u!114 &402119383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6823,7 +6824,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2074928364
 RectTransform:
   m_ObjectHideFlags: 0
