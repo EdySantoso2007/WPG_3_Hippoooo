@@ -17,6 +17,11 @@ public class PlayerMovement : MonoBehaviour
     public float playerKnockback = 2f;    // Kekuatan pentalan tubuh player
     public float stunDuration = 2f;       // Lama waktu stun
 
+    [Header("SFX")]
+    public AudioClip dashSfx;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
+    private AudioSource audioSource;
+
     private bool isDashing = false;
     [HideInInspector] public bool isStunned = false;
     private float lastDashTime = -5f;
@@ -33,6 +38,7 @@ public class PlayerMovement : MonoBehaviour
         playerInput = GetComponent<PlayerInput>();
         moveAction = playerInput.actions["Move"];
         dashAction = playerInput.actions["Dash"];
+        audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
@@ -74,10 +80,23 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void PlaySfx(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (audioSource != null)
+            audioSource.PlayOneShot(clip, sfxVolume);
+        else
+            AudioSource.PlayClipAtPoint(clip, transform.position, sfxVolume);
+    }
+
     private IEnumerator PerformDash()
     {
         isDashing = true;
         lastDashTime = Time.time;
+
+        PlaySfx(dashSfx);
+
         yield return new WaitForSeconds(dashDuration);
         isDashing = false;
     }

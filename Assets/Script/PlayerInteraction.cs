@@ -12,10 +12,29 @@ public class PlayerInteraction : MonoBehaviour
 
     public Transform holdPoint;
 
+    [Header("SFX")]
+    public AudioClip pickupSfx;
+    public AudioClip dropSfx;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
+    private AudioSource audioSource;
+
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
         interactAction = playerInput.actions["Interact"];
+
+        // Pakai AudioSource di player jika ada, kalau tidak ada tetap bunyi lewat PlayClipAtPoint
+        audioSource = GetComponent<AudioSource>();
+    }
+
+    private void PlaySfx(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        if (audioSource != null)
+            audioSource.PlayOneShot(clip, sfxVolume);
+        else
+            AudioSource.PlayClipAtPoint(clip, transform.position, sfxVolume);
     }
 
     void Update()
@@ -36,6 +55,8 @@ public class PlayerInteraction : MonoBehaviour
 
                     carriedBox.transform.SetParent(null);
                     carriedBox = null;
+
+                    PlaySfx(dropSfx);
                 }
                 // Curi Kotak
                 else
@@ -49,6 +70,8 @@ public class PlayerInteraction : MonoBehaviour
                         carriedBox.transform.SetParent(holdPoint);
                         carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
                         carriedBox.transform.localRotation = Quaternion.identity;
+
+                        PlaySfx(pickupSfx);
                     }
                 }
             }
@@ -68,6 +91,8 @@ public class PlayerInteraction : MonoBehaviour
                     carriedBox.transform.SetParent(holdPoint);
                     carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
                     carriedBox.transform.localRotation = Quaternion.identity;
+
+                    PlaySfx(pickupSfx);
                 }
                 // Jatuhkan kotak ke lantai
                 else if (carriedBox != null)
@@ -82,6 +107,8 @@ public class PlayerInteraction : MonoBehaviour
 
                     carriedBox.tag = "Box";
                     carriedBox = null;
+
+                    PlaySfx(dropSfx);
                 }
             }
         }
