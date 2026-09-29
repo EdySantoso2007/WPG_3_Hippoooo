@@ -474,6 +474,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   holdPoint: {fileID: 8645999343553219546}
+  pickupSfx: {fileID: 8300000, guid: 760e4aa5f8af2b64fabcc5048afb44ca, type: 3}
+  dropSfx: {fileID: 8300000, guid: a4c67ca284457b34e9cb9c0627290a3c, type: 3}
+  sfxVolume: 1
 --- !u!135 &2232337851665604062
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -542,6 +545,8 @@ MonoBehaviour:
   bumpForce: 5
   playerKnockback: 7
   stunDuration: 2
+  dashSfx: {fileID: 8300000, guid: 2f1517876caabce40985254e31c97486, type: 3}
+  sfxVolume: 1
   isStunned: 0
 --- !u!136 &-4213036541888136267
 CapsuleCollider:

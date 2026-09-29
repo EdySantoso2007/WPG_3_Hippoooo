@@ -17,11 +17,20 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject roomPanel;
     [SerializeField] private GameObject settingPanel;
 
+    [Header("SFX")]
+    [SerializeField] private AudioClip clickSfx;
+    [SerializeField, Range(0f, 1f)] private float sfxVolume = 1f;
+    private AudioSource audioSource;
+    private bool playSfxOnShow = false;
+
     private UIPanelState currentPanel;
 
     private void Start()
     {
+        audioSource = GetComponentInChildren<AudioSource>();
+
         ShowPanel(UIPanelState.MainMenu);
+        playSfxOnShow = true; // setelah panel awal tampil, perpindahan panel berikutnya berbunyi
     }
 
     private void Update()
@@ -62,9 +71,27 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    // Bisa juga dipanggil dari OnClick tombol lain yang tidak pindah panel
+    public void PlayClickSfx()
+    {
+        if (clickSfx == null) return;
+
+        if (audioSource != null)
+        {
+            audioSource.PlayOneShot(clickSfx, sfxVolume);
+        }
+        else
+        {
+            Vector3 pos = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+            AudioSource.PlayClipAtPoint(clickSfx, pos, sfxVolume);
+        }
+    }
+
     public void ShowPanel(UIPanelState panelToActive)
     {
         currentPanel = panelToActive;
+
+        if (playSfxOnShow) PlayClickSfx();
 
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (modeSelectionPanel != null) modeSelectionPanel.SetActive(false);
