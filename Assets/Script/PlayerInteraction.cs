@@ -18,6 +18,10 @@ public class PlayerInteraction : MonoBehaviour
     [Range(0f, 1f)] public float sfxVolume = 1f;
     private AudioSource audioSource;
 
+    // --- Animator ---
+    private Animator animator;
+    private static readonly int IsCarryingHash = Animator.StringToHash("IsCarrying");
+
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
@@ -25,6 +29,8 @@ public class PlayerInteraction : MonoBehaviour
 
         // Pakai AudioSource di player jika ada, kalau tidak ada tetap bunyi lewat PlayClipAtPoint
         audioSource = GetComponent<AudioSource>();
+
+        animator = GetComponentInChildren<Animator>();
     }
 
     private void PlaySfx(AudioClip clip)
@@ -65,6 +71,12 @@ public class PlayerInteraction : MonoBehaviour
                     if (stolenBox != null)
                     {
                         carriedBox = stolenBox;
+
+                        // Samakan dengan ambil dari lantai: matikan fisika kotak saat dibawa
+                        Rigidbody stolenRb = carriedBox.GetComponent<Rigidbody>();
+                        if (stolenRb != null) stolenRb.isKinematic = true;
+                        Collider stolenCol = carriedBox.GetComponent<Collider>();
+                        if (stolenCol != null) stolenCol.enabled = false;
 
                         // FIX POSISI: Jadikan child dulu, lalu samakan posisinya dengan Hold Point
                         carriedBox.transform.SetParent(holdPoint);
@@ -112,6 +124,14 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
         }
+    }
+
+    // Dipanggil setiap frame setelah Update: kirim status "membawa kotak" ke Animator.
+    // Ditaruh di sini supaya semua kasus (ambil, taruh, curi, jatuh karena tabrakan) ikut tercakup.
+    void LateUpdate()
+    {
+        if (animator != null)
+            animator.SetBool(IsCarryingHash, carriedBox != null);
     }
 
     void OnTriggerEnter(Collider other)

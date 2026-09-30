@@ -576,7 +576,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe5b2cc6ddd5292439e4af1208c14478, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerManager
-  playerPrefab: {fileID: 9111024016014653155, guid: 9ae14e9fe5886a44b8a4519a1c401d41, type: 3}
+  playerPrefab: {fileID: 1416482730666523189, guid: e03697a96b3aaa94fb1e5b9296ffc1af, type: 3}
   spawnPoints:
   - {fileID: 1347609520}
   - {fileID: 27515604}
@@ -4353,7 +4353,7 @@ Transform:
   m_GameObject: {fileID: 1347609519}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.47, y: 0.17, z: 0.94}
+  m_LocalPosition: {x: -0.47, y: 1.3, z: 0.94}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

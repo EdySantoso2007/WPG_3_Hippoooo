@@ -32,6 +32,11 @@ public class PlayerMovement : MonoBehaviour
     private InputAction moveAction;
     private InputAction dashAction;
 
+    // --- Animator ---
+    private Animator animator;
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int IsDashingHash = Animator.StringToHash("IsDashing");
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -39,15 +44,27 @@ public class PlayerMovement : MonoBehaviour
         moveAction = playerInput.actions["Move"];
         dashAction = playerInput.actions["Dash"];
         audioSource = GetComponent<AudioSource>();
+        animator = GetComponentInChildren<Animator>();
     }
 
     void Update()
     {
-        if (Time.timeScale == 0f || isStunned) return;
+        if (Time.timeScale == 0f) return;
+
+        // Saat stun: diam, animasi kembali ke Idle
+        if (isStunned)
+        {
+            if (animator != null) animator.SetFloat(SpeedHash, 0f);
+            return;
+        }
 
         if (rb.IsSleeping()) rb.WakeUp();
 
         moveInput = moveAction.ReadValue<Vector2>();
+
+        // Kirim kecepatan ke Animator (0 = diam, 1 = lari penuh)
+        if (animator != null)
+            animator.SetFloat(SpeedHash, moveInput.magnitude);
 
         if (dashAction != null && dashAction.WasPressedThisFrame())
         {
@@ -60,7 +77,12 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (Time.timeScale == 0f || isStunned) return;
+        if (Time.timeScale == 0f) return;
+
+        // Cegah karakter berputar sendiri akibat fisika (rotasi sudah diatur lewat script)
+        rb.angularVelocity = Vector3.zero;
+
+        if (isStunned) return;
 
         if (isDashing)
         {
@@ -94,11 +116,14 @@ public class PlayerMovement : MonoBehaviour
     {
         isDashing = true;
         lastDashTime = Time.time;
+        if (animator != null) animator.SetBool(IsDashingHash, true);
 
         PlaySfx(dashSfx);
 
         yield return new WaitForSeconds(dashDuration);
+
         isDashing = false;
+        if (animator != null) animator.SetBool(IsDashingHash, false);
     }
 
     void OnCollisionEnter(Collision collision)
