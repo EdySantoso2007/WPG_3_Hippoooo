@@ -12,9 +12,15 @@ public class PlayerManager : MonoBehaviour
     [Header("Pengaturan Spawn")]
     public List<Transform> spawnPoints;
 
-    [Header("Urutan Warna Player")]
-    // Merah, Biru, Hijau, Kuning
-    private Color[] playerColors = { Color.red, Color.blue, Color.green, Color.yellow };
+    [Header("Texture Player (UV)")]
+    [Tooltip("Urutan harus: [0] Merah, [1] Biru, [2] Hijau, [3] Kuning")]
+    public Texture2D[] playerTextures;
+
+    // ID properti material (URP Lit memakai _BaseMap/_BaseColor, Built-in memakai _MainTex/_Color)
+    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
 
     private int playersJoined = 0;
 
@@ -51,9 +57,9 @@ public class PlayerManager : MonoBehaviour
 
     private void SetupPlayer(PlayerInput playerInput)
     {
-        if (playersJoined >= spawnPoints.Count || playersJoined >= playerColors.Length)
+        if (playersJoined >= spawnPoints.Count || playersJoined >= playerTextures.Length)
         {
-            Debug.Log("Maksimal player sudah tercapai, atau spawnPoints kurang!");
+            Debug.Log("Maksimal player sudah tercapai, spawnPoints kurang, atau Player Textures kurang!");
             Destroy(playerInput.gameObject);
             return;
         }
@@ -61,24 +67,51 @@ public class PlayerManager : MonoBehaviour
         // 1. Pindahkan player ke titik spawn sesuai urutan
         playerInput.transform.position = spawnPoints[playersJoined].position;
 
-        // 2. Ubah warna player (versi 3D: cari SEMUA Renderer di karakter,
-        // termasuk yang ada di child object seperti body/mesh visual)
-        Renderer[] renderers = playerInput.GetComponentsInChildren<Renderer>();
-        if (renderers.Length > 0)
-        {
-            foreach (Renderer r in renderers)
-            {
-                // Instance baru material supaya tidak ikut mewarnai
-                // player lain yang share material yang sama
-                r.material.color = playerColors[playersJoined];
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Tidak ada Renderer ditemukan di Player untuk diwarnai.");
-        }
+        // 2. Ganti texture (UV) sesuai urutan player
+        ApplyTexture(playerInput.gameObject, playerTextures[playersJoined]);
 
         // Tambah jumlah player yang sudah masuk
         playersJoined++;
+    }
+
+    private void ApplyTexture(GameObject player, Texture2D texture)
+    {
+        if (texture == null)
+        {
+            Debug.LogWarning("Texture untuk player ini belum diisi di PlayerManager (Player Textures).");
+            return;
+        }
+
+        // Hanya ubah Renderer milik model hippo (anak dari Animator),
+        // supaya Renderer lain (mis. kapsul lama yang dimatikan) tidak ikut.
+        // Kalau Animator tidak ketemu, pakai semua Renderer di player.
+        Animator animator = player.GetComponentInChildren<Animator>();
+        Transform modelRoot = animator != null ? animator.transform : player.transform;
+
+        Renderer[] renderers = modelRoot.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+        {
+            Debug.LogWarning("Tidak ada Renderer ditemukan di Player untuk diberi texture.");
+            return;
+        }
+
+        foreach (Renderer r in renderers)
+        {
+            // r.materials membuat salinan material khusus renderer ini,
+            // jadi texture satu player tidak ikut mengubah player lain.
+            foreach (Material m in r.materials)
+            {
+                if (m.HasProperty(BaseMapId))
+                {
+                    m.SetTexture(BaseMapId, texture);
+                    if (m.HasProperty(BaseColorId)) m.SetColor(BaseColorId, Color.white);
+                }
+                else if (m.HasProperty(MainTexId))
+                {
+                    m.SetTexture(MainTexId, texture);
+                    if (m.HasProperty(ColorId)) m.SetColor(ColorId, Color.white);
+                }
+            }
+        }
     }
 }
