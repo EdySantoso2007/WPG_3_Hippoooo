@@ -273,12 +273,21 @@ MonoBehaviour:
   offset: {x: 0, y: 5, z: -5}
   smoothTime: 0.5
   minZoom: 30
-  maxZoom: 50
+  maxZoom: 65
   minDistanceBeforeZoom: 3
-  zoomLimiter: 10
+  zoomLimiter: 25
   enableContinuousShake: 1
   continuousShakePower: 0.5
   continuousShakeSpeed: 0.5
+  useMapBounds: 1
+  mapMin: {x: -13, y: -3.618}
+  mapMax: {x: 5, y: 2.441}
+  groundY: 0
+  limitZoomToMap: 1
+  marginLeft: -1
+  marginRight: -1
+  marginTop: -8
+  marginBottom: 0.5
 --- !u!1 &27515603
 GameObject:
   m_ObjectHideFlags: 0
@@ -585,8 +594,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.9285559, z: 1}
+  m_Center: {x: 0, y: -0.03572216, z: 0}
 --- !u!23 &101441308
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -989,8 +998,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.9285559, z: 1}
+  m_Center: {x: 0, y: -0.03572216, z: 0}
 --- !u!23 &174658402
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2351,8 +2360,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.9285559, z: 1}
+  m_Center: {x: 0, y: -0.03572216, z: 0}
 --- !u!23 &776472102
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3083,8 +3092,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 0.9285559, z: 1}
+  m_Center: {x: 0, y: -0.03572216, z: 0}
 --- !u!23 &971414136
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3640,7 +3649,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eff07caf6615fb04a9dbd271616b6dbb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.01
+      value: 5.172
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eff07caf6615fb04a9dbd271616b6dbb, type: 3}
       propertyPath: m_LocalRotation.w
@@ -3968,6 +3977,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1258134129}
   m_CullTransparentMesh: 1
+--- !u!1 &1288118165
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1288118166}
+  m_Layer: 0
+  m_Name: PojokKananAtasd
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1288118166
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1288118165}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.661, y: 3.901, z: 2.441}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1293571376
 GameObject:
   m_ObjectHideFlags: 0
@@ -5610,7 +5650,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eff07caf6615fb04a9dbd271616b6dbb, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 5.01
+      value: 5.172
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: eff07caf6615fb04a9dbd271616b6dbb, type: 3}
       propertyPath: m_LocalRotation.w
@@ -5806,6 +5846,37 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -3.89, y: 1.15, z: -3.62}
   m_LocalScale: {x: 14.7431345, y: 3.6228, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1886089867
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1886089868}
+  m_Layer: 0
+  m_Name: PojokKiriBawah
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1886089868
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1886089867}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -10.611, y: 0, z: -3.618}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -6938,3 +7009,5 @@ SceneRoots:
   - {fileID: 452239786}
   - {fileID: 1972401134}
   - {fileID: 110052767}
+  - {fileID: 1886089868}
+  - {fileID: 1288118166}

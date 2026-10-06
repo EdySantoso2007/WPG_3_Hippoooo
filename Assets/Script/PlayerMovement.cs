@@ -16,6 +16,8 @@ public class PlayerMovement : MonoBehaviour
     public float bumpForce = 12f;         // Kekuatan memental kotak musuh
     public float playerKnockback = 2f;    // Kekuatan pentalan tubuh player
     public float stunDuration = 2f;       // Lama waktu stun
+    [Tooltip("Seberapa searah dash dengan lawan agar dianggap kena (1 = tepat di depan, 0 = samping, -1 = belakang). Naikkan jika pemain di samping ikut kena.")]
+    [Range(-1f, 1f)] public float minHitDirection = 0.1f;
 
     [Header("SFX")]
     public AudioClip dashSfx;
@@ -129,28 +131,48 @@ public class PlayerMovement : MonoBehaviour
         if (animator != null) animator.SetBool(IsDashingHash, false);
     }
 
+    // Terpanggil saat dua collider MULAI bersentuhan (dash dari jauh)
     void OnCollisionEnter(Collision collision)
     {
-        if (isDashing && collision.gameObject.CompareTag("Player"))
+        TryHitPlayer(collision);
+    }
+
+    // Terpanggil TERUS selama masih bersentuhan (dash saat sudah menempel).
+    // Inilah perbaikan untuk kasus pemain yang sudah menempel sebelum dash.
+    void OnCollisionStay(Collision collision)
+    {
+        TryHitPlayer(collision);
+    }
+
+    private void TryHitPlayer(Collision collision)
+    {
+        if (!isDashing || isStunned) return;
+        if (!collision.gameObject.CompareTag("Player")) return;
+
+        PlayerMovement otherMovement = collision.gameObject.GetComponent<PlayerMovement>();
+
+        // Pastikan musuh belum stun untuk mencegah tabrakan beruntun
+        if (otherMovement == null || otherMovement.isStunned) return;
+
+        // Hanya kena jika lawan berada di arah dash (bukan di samping / belakang)
+        Vector3 toOther = collision.transform.position - transform.position;
+        toOther.y = 0f;
+        if (toOther.sqrMagnitude > 0.0001f)
         {
-            PlayerMovement otherMovement = collision.gameObject.GetComponent<PlayerMovement>();
-
-            // Pastikan musuh belum dalam keadaan stun untuk mencegah tabrakan beruntun
-            if (otherMovement != null && !otherMovement.isStunned)
-            {
-                PlayerInteraction otherPlayer = collision.gameObject.GetComponent<PlayerInteraction>();
-
-                Vector3 bumpDirection = (collision.transform.position - transform.position).normalized;
-                bumpDirection.y = 1.2f;
-
-                if (otherPlayer != null)
-                {
-                    otherPlayer.ForceDropBox(bumpDirection * bumpForce);
-                }
-
-                otherMovement.TakeHitAndStun(bumpDirection * playerKnockback, stunDuration);
-            }
+            if (Vector3.Dot(transform.forward, toOther.normalized) < minHitDirection) return;
         }
+
+        PlayerInteraction otherPlayer = collision.gameObject.GetComponent<PlayerInteraction>();
+
+        Vector3 bumpDirection = (collision.transform.position - transform.position).normalized;
+        bumpDirection.y = 1.2f;
+
+        if (otherPlayer != null)
+        {
+            otherPlayer.ForceDropBox(bumpDirection * bumpForce);
+        }
+
+        otherMovement.TakeHitAndStun(bumpDirection * playerKnockback, stunDuration);
     }
 
     public void TakeHitAndStun(Vector3 knockbackForce, float duration)
