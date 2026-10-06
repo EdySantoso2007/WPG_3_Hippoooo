@@ -24,6 +24,23 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     [Tooltip("Seberapa cepat getarannya berayun")]
     public float continuousShakeSpeed = 2f;
 
+    [Header("Batas Map (agar luar map tidak terlihat)")]
+    public bool useMapBounds = true;
+    [Tooltip("Pojok kiri-bawah lantai map (X, Z) dalam koordinat dunia")]
+    public Vector2 mapMin = new Vector2(-20f, -10f);
+    [Tooltip("Pojok kanan-atas lantai map (X, Z) dalam koordinat dunia")]
+    public Vector2 mapMax = new Vector2(20f, 10f);
+    [Tooltip("Tinggi lantai map (Y)")]
+    public float groundY = 0f;
+    [Header("Margin Per Sisi")]
+    [Tooltip("Positif = kamera berhenti lebih awal (luar map makin aman). Negatif = kamera boleh melewati batas map, berguna agar pemain di pojok tidak terpotong tepi layar / UI.")]
+    public float marginLeft = 0.5f;
+    public float marginRight = 0.5f;
+    [Tooltip("Sisi atas layar (bagian belakang map)")]
+    public float marginTop = 0.5f;
+    [Tooltip("Sisi bawah layar. Isi negatif (misal -3) jika bawah layar tertutup UI skor")]
+    public float marginBottom = 0.5f;
+
     // --- VARIABEL TRIGGER SHAKE ---
     private float shakeTimeRemaining;
     private float shakePower;
@@ -52,6 +69,9 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         Vector3 centerPoint = GetCenterPoint();
         Vector3 targetPosition = centerPoint + offset;
 
+        // Batasi posisi kamera agar area luar map tidak terlihat
+        if (useMapBounds) targetPosition = ClampToMap(targetPosition);
+
         // 1. Hitung pergerakan mulus kamera dasar
         currentSmoothPosition = Vector3.SmoothDamp(currentSmoothPosition, targetPosition, ref velocity, smoothTime);
 
@@ -60,10 +80,7 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         // 2. GETARAN HORIZONTAL TERUS MENERUS (Kanan-Kiri Saja)
         if (enableContinuousShake)
         {
-            // Hanya menghitung noise untuk sumbu X
             float noiseX = (Mathf.PerlinNoise(Time.time * continuousShakeSpeed, 0f) * 2f) - 1f;
-
-            // Sumbu Y dan Z dikunci ke 0f
             shakeOffset += new Vector3(noiseX, 0f, 0f) * continuousShakePower;
         }
 
@@ -94,6 +111,96 @@ public class DynamicMultiplayerCamera : MonoBehaviour
 
         cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * 3f);
     }
+
+    // ------------------------------------------------------------
+    //  BATAS MAP
+    // ------------------------------------------------------------
+
+    // Tembak ray dari titik viewport ke bidang lantai (dihitung dari posisi 'origin',
+    // bukan posisi kamera yang sedang bergetar, supaya hasil clamp stabil).
+    bool GroundPoint(float vx, float vy, Vector3 origin, out Vector3 point)
+    {
+        Vector3 dir = cam.ViewportPointToRay(new Vector3(vx, vy, 0f)).direction;
+        point = Vector3.zero;
+
+        // Ray harus mengarah ke bawah agar bisa mengenai lantai
+        if (dir.y >= -0.0001f) return false;
+
+        float t = (groundY - origin.y) / dir.y;
+        if (t <= 0f) return false;
+
+        point = origin + dir * t;
+        return true;
+    }
+
+    Vector3 ClampToMap(Vector3 desiredCamPos)
+    {
+        Vector3 origin = currentSmoothPosition;
+
+        // Titik lantai di tengah layar + 4 sudut layar
+        if (!GroundPoint(0.5f, 0.5f, origin, out Vector3 mid) ||
+            !GroundPoint(0f, 0f, origin, out Vector3 bl) ||
+            !GroundPoint(1f, 0f, origin, out Vector3 br) ||
+            !GroundPoint(0f, 1f, origin, out Vector3 tl) ||
+            !GroundPoint(1f, 1f, origin, out Vector3 tr))
+        {
+            return desiredCamPos; // kamera tidak menghadap lantai, lewati clamp
+        }
+
+        // Batas terluar area terlihat (ambil yang paling jauh dari 4 sudut)
+        float visMinX = Mathf.Min(Mathf.Min(bl.x, br.x), Mathf.Min(tl.x, tr.x));
+        float visMaxX = Mathf.Max(Mathf.Max(bl.x, br.x), Mathf.Max(tl.x, tr.x));
+        float visMinZ = Mathf.Min(Mathf.Min(bl.z, br.z), Mathf.Min(tl.z, tr.z));
+        float visMaxZ = Mathf.Max(Mathf.Max(bl.z, br.z), Mathf.Max(tl.z, tr.z));
+
+        // Seberapa jauh area terlihat melebar dari titik tengah layar
+        float leftExt   = mid.x - visMinX + marginLeft;
+        float rightExt  = visMaxX - mid.x + marginRight;
+        float bottomExt = mid.z - visMinZ + marginBottom;
+        float topExt    = visMaxZ - mid.z + marginTop;
+
+        // Selisih antara posisi kamera dan titik lantai yang dilihat di tengah layar
+        Vector2 shift = new Vector2(mid.x - origin.x, mid.z - origin.z);
+
+        // Titik tengah layar (di lantai) kalau kamera berada di posisi yang diinginkan
+        float viewX = desiredCamPos.x + shift.x;
+        float viewZ = desiredCamPos.z + shift.y;
+
+        // Batas aman titik tengah layar
+        float minX = mapMin.x + leftExt;
+        float maxX = mapMax.x - rightExt;
+        float minZ = mapMin.y + bottomExt;
+        float maxZ = mapMax.y - topExt;
+
+        // Kalau area terlihat lebih besar dari map, taruh di tengah map
+        viewX = (minX > maxX) ? (mapMin.x + mapMax.x) * 0.5f : Mathf.Clamp(viewX, minX, maxX);
+        viewZ = (minZ > maxZ) ? (mapMin.y + mapMax.y) * 0.5f : Mathf.Clamp(viewZ, minZ, maxZ);
+
+        // Kembalikan ke posisi kamera
+        desiredCamPos.x = viewX - shift.x;
+        desiredCamPos.z = viewZ - shift.y;
+        return desiredCamPos;
+    }
+
+    // Gambar batas map di Scene view (pilih objek kamera untuk melihatnya)
+    void OnDrawGizmosSelected()
+    {
+        if (!useMapBounds) return;
+
+        Gizmos.color = Color.green;
+        Vector3 a = new Vector3(mapMin.x, groundY, mapMin.y);
+        Vector3 b = new Vector3(mapMax.x, groundY, mapMin.y);
+        Vector3 c = new Vector3(mapMax.x, groundY, mapMax.y);
+        Vector3 d = new Vector3(mapMin.x, groundY, mapMax.y);
+        Gizmos.DrawLine(a, b);
+        Gizmos.DrawLine(b, c);
+        Gizmos.DrawLine(c, d);
+        Gizmos.DrawLine(d, a);
+    }
+
+    // ------------------------------------------------------------
+    //  UTILITAS
+    // ------------------------------------------------------------
 
     Vector3 GetCenterPoint()
     {
