@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Multiplayer4.slnx"
+    "dotnet.defaultSolution": "WPG_3_Hippoooo.slnx"
 }
