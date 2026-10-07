@@ -283,7 +283,6 @@ MonoBehaviour:
   mapMin: {x: -13, y: -3.618}
   mapMax: {x: 5, y: 2.441}
   groundY: 0
-  limitZoomToMap: 1
   marginLeft: -1
   marginRight: -1
   marginTop: -8
@@ -594,8 +593,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.9285559, z: 1}
-  m_Center: {x: 0, y: -0.03572216, z: 0}
+  m_Size: {x: 1, y: 1, z: 0.99999994}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &101441308
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -998,8 +997,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.9285559, z: 1}
-  m_Center: {x: 0, y: -0.03572216, z: 0}
+  m_Size: {x: 1, y: 1, z: 0.99999994}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &174658402
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2360,8 +2359,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.9285559, z: 1}
-  m_Center: {x: 0, y: -0.03572216, z: 0}
+  m_Size: {x: 1, y: 1, z: 0.99999994}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &776472102
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3092,8 +3091,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.9285559, z: 1}
-  m_Center: {x: 0, y: -0.03572216, z: 0}
+  m_Size: {x: 1, y: 1, z: 0.99999994}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &971414136
 MeshRenderer:
   m_ObjectHideFlags: 0
