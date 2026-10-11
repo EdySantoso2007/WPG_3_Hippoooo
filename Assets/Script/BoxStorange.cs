@@ -20,6 +20,12 @@ public class BoxStorage : MonoBehaviour
         UpdateScoreUI(); // Set angka menjadi 0 saat game dimulai
     }
 
+    // Mengambil skor saat ini (jumlah kotak di zona ini)
+    public int GetScore()
+    {
+        return storedBoxes.Count;
+    }
+
     // Dipanggil saat player menaruh kotak di Drop Zone
     public void AddBox(GameObject box)
     {
