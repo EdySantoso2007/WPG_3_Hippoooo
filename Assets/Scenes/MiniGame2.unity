@@ -1852,7 +1852,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc10eabc1aaf3e942abdb803b900a23d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxSpawner
-  boxPrefab: {fileID: 2865985033342566202, guid: e54a490d9c7b4a843ba86e587a22742b, type: 3}
+  boxPrefab: {fileID: 410519893509112217, guid: 97e62abc98ee0fb44ad374a57a5bbc30, type: 3}
   maxBoxes: 7
   spawnInterval: 3
 --- !u!4 &452239786
