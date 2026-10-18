@@ -9957,6 +9957,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   holdPoint: {fileID: 8645999343553219546}
+  dropRadius: 0.6
   pickupSfx: {fileID: 8300000, guid: 760e4aa5f8af2b64fabcc5048afb44ca, type: 3}
   dropSfx: {fileID: 8300000, guid: a4c67ca284457b34e9cb9c0627290a3c, type: 3}
   sfxVolume: 1
