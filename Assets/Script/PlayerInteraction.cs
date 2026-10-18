@@ -1,16 +1,22 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class PlayerInteraction : MonoBehaviour
 {
     private PlayerInput playerInput;
     private InputAction interactAction;
 
-    private GameObject boxToPickUp;
+    // Semua kotak di lantai yang sedang masuk sphere trigger (yang besar)
+    private readonly HashSet<GameObject> nearbyBoxes = new HashSet<GameObject>();
     private GameObject carriedBox;
-    private BoxStorage currentDropZone;
 
     public Transform holdPoint;
+
+    [Header("Deteksi Taruh / Curi Kotak (Drop Zone)")]
+    [Tooltip("Jarak maksimum (bidang datar) dari posisi tubuh karakter ke Drop Zone. " +
+             "Kecil = karakter harus benar-benar berdiri di dalam / menempel zona.")]
+    public float dropRadius = 0.4f;
 
     [Header("SFX")]
     public AudioClip pickupSfx;
@@ -20,17 +26,16 @@ public class PlayerInteraction : MonoBehaviour
 
     // --- Animator ---
     private Animator animator;
+    private PlayerMovement playerMovement;
     private static readonly int IsCarryingHash = Animator.StringToHash("IsCarrying");
 
     void Start()
     {
         playerInput = GetComponent<PlayerInput>();
         interactAction = playerInput.actions["Interact"];
+        playerMovement = GetComponent<PlayerMovement>();
 
-        // Pakai AudioSource di player jika ada, kalau tidak ada tetap bunyi lewat PlayClipAtPoint
         audioSource = GetComponent<AudioSource>();
-
-        // Animator ada di anak (WorkerHippo)
         animator = GetComponentInChildren<Animator>();
     }
 
@@ -44,21 +49,94 @@ public class PlayerInteraction : MonoBehaviour
             AudioSource.PlayClipAtPoint(clip, transform.position, sfxVolume);
     }
 
+    // Cari Drop Zone tempat karakter BERDIRI.
+    // Patokannya posisi tubuh karakter (bukan titik di depannya), diukur di bidang datar (XZ).
+    // - Zona yang berisi posisi karakter punya jarak 0, jadi pasti menang.
+    // - Kalau ada beberapa zona yang jaraknya sama (misalnya tumpang tindih),
+    //   dipilih yang pusatnya paling dekat dengan karakter.
+    private BoxStorage GetNearestDropZone()
+    {
+        Vector3 pos = transform.position;
+        Collider[] hits = Physics.OverlapSphere(pos, dropRadius + 1f, ~0, QueryTriggerInteraction.Collide);
+
+        BoxStorage best = null;
+        float bestEdge = float.MaxValue;
+        float bestCenter = float.MaxValue;
+
+        foreach (Collider h in hits)
+        {
+            if (!h.CompareTag("DropZone")) continue;
+
+            BoxStorage storage = h.GetComponent<BoxStorage>();
+            if (storage == null) continue;
+
+            // Samakan tinggi dengan collider zona supaya hanya posisi datar (XZ) yang dihitung
+            Vector3 flatPos = new Vector3(pos.x, h.bounds.center.y, pos.z);
+
+            Vector3 closest = h.ClosestPoint(flatPos);
+            float edgeDist = (closest - flatPos).magnitude; // 0 kalau karakter ada di dalam zona
+            if (edgeDist > dropRadius) continue;
+
+            float centerDist = (h.bounds.center - flatPos).sqrMagnitude;
+
+            bool better = edgeDist < bestEdge - 0.0001f ||
+                          (Mathf.Abs(edgeDist - bestEdge) <= 0.0001f && centerDist < bestCenter);
+            if (better)
+            {
+                bestEdge = edgeDist;
+                bestCenter = centerDist;
+                best = storage;
+            }
+        }
+        return best;
+    }
+
+    // Cari kotak di lantai yang PALING DEKAT dengan karakter
+    private GameObject GetNearestBox()
+    {
+        GameObject best = null;
+        float bestDist = float.MaxValue;
+        List<GameObject> dead = null;
+
+        foreach (GameObject b in nearbyBoxes)
+        {
+            if (b == null || !b.CompareTag("Box"))
+            {
+                if (dead == null) dead = new List<GameObject>();
+                dead.Add(b);
+                continue;
+            }
+
+            float d = (b.transform.position - transform.position).sqrMagnitude;
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = b;
+            }
+        }
+
+        if (dead != null)
+            foreach (GameObject d in dead) nearbyBoxes.Remove(d);
+
+        return best;
+    }
+
     void Update()
     {
         // CEK STUN: Jika sedang stun, batalkan semua perintah interaksi
-        PlayerMovement pm = GetComponent<PlayerMovement>();
-        if (pm != null && pm.isStunned) return;
+        if (playerMovement != null && playerMovement.isStunned) return;
 
         if (interactAction != null && interactAction.WasPressedThisFrame())
         {
-            // Jika sedang di dalam area Drop Zone
-            if (currentDropZone != null)
+            BoxStorage dropZone = GetNearestDropZone();
+
+            // Jika karakter sedang berada di Drop Zone
+            if (dropZone != null)
             {
                 // Taruh Kotak
                 if (carriedBox != null)
                 {
-                    currentDropZone.AddBox(carriedBox);
+                    dropZone.AddBox(carriedBox);
 
                     carriedBox.transform.SetParent(null);
                     carriedBox = null;
@@ -68,47 +146,48 @@ public class PlayerInteraction : MonoBehaviour
                 // Curi Kotak
                 else
                 {
-                    GameObject stolenBox = currentDropZone.RemoveLastBox();
+                    GameObject stolenBox = dropZone.RemoveLastBox();
                     if (stolenBox != null)
                     {
                         carriedBox = stolenBox;
 
-                        // Samakan dengan ambil dari lantai: matikan fisika kotak saat dibawa
                         Rigidbody stolenRb = carriedBox.GetComponent<Rigidbody>();
                         if (stolenRb != null) stolenRb.isKinematic = true;
                         Collider stolenCol = carriedBox.GetComponent<Collider>();
                         if (stolenCol != null) stolenCol.enabled = false;
 
-                        // FIX POSISI: Jadikan child dulu, lalu samakan posisinya dengan Hold Point
                         carriedBox.transform.SetParent(holdPoint);
-                        carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
+                        carriedBox.transform.position = holdPoint.position;
                         carriedBox.transform.localRotation = Quaternion.identity;
 
                         PlaySfx(pickupSfx);
                     }
                 }
             }
-            // Jika sedang di luar Drop Zone (Interaksi biasa dengan kotak di lantai)
+            // Jika tidak di Drop Zone (interaksi biasa dengan kotak di lantai)
             else
             {
-                // Ambil kotak dari lantai
-                if (carriedBox == null && boxToPickUp != null)
+                // Ambil kotak terdekat dari lantai
+                if (carriedBox == null)
                 {
-                    carriedBox = boxToPickUp;
-                    boxToPickUp = null;
+                    GameObject target = GetNearestBox();
+                    if (target != null)
+                    {
+                        carriedBox = target;
+                        nearbyBoxes.Remove(target);
 
-                    carriedBox.GetComponent<Rigidbody>().isKinematic = true;
-                    carriedBox.GetComponent<Collider>().enabled = false;
+                        carriedBox.GetComponent<Rigidbody>().isKinematic = true;
+                        carriedBox.GetComponent<Collider>().enabled = false;
 
-                    // FIX POSISI: Jadikan child dulu, lalu samakan posisinya dengan Hold Point
-                    carriedBox.transform.SetParent(holdPoint);
-                    carriedBox.transform.position = holdPoint.position; // Kembali pakai ini agar presisi!
-                    carriedBox.transform.localRotation = Quaternion.identity;
+                        carriedBox.transform.SetParent(holdPoint);
+                        carriedBox.transform.position = holdPoint.position;
+                        carriedBox.transform.localRotation = Quaternion.identity;
 
-                    PlaySfx(pickupSfx);
+                        PlaySfx(pickupSfx);
+                    }
                 }
                 // Jatuhkan kotak ke lantai
-                else if (carriedBox != null)
+                else
                 {
                     carriedBox.transform.SetParent(null);
 
@@ -127,40 +206,26 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    // Kirim status "membawa kotak" ke Animator setiap frame.
-    // Ditaruh di LateUpdate supaya semua kasus ikut tercakup
-    // (ambil, taruh, curi, dan jatuh karena tabrakan dash).
     void LateUpdate()
     {
         if (animator != null)
             animator.SetBool(IsCarryingHash, carriedBox != null);
     }
 
+    // Sphere trigger besar HANYA dipakai untuk mendeteksi kotak di lantai.
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Box"))
         {
-            boxToPickUp = other.gameObject;
-        }
-        else if (other.CompareTag("DropZone"))
-        {
-            currentDropZone = other.GetComponent<BoxStorage>();
+            nearbyBoxes.Add(other.gameObject);
         }
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Box") && boxToPickUp == other.gameObject)
+        if (other.CompareTag("Box"))
         {
-            boxToPickUp = null;
-        }
-        else if (other.CompareTag("DropZone"))
-        {
-            BoxStorage zone = other.GetComponent<BoxStorage>();
-            if (currentDropZone == zone)
-            {
-                currentDropZone = null;
-            }
+            nearbyBoxes.Remove(other.gameObject);
         }
     }
 
@@ -186,5 +251,12 @@ public class PlayerInteraction : MonoBehaviour
             carriedBox.tag = "Box";
             carriedBox = null;
         }
+    }
+
+    // Lingkaran dropRadius di sekitar tubuh karakter (terlihat saat player dipilih)
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(transform.position, dropRadius);
     }
 }
