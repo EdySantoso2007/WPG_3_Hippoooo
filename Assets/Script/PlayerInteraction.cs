@@ -11,6 +11,9 @@ public class PlayerInteraction : MonoBehaviour
     private readonly HashSet<GameObject> nearbyBoxes = new HashSet<GameObject>();
     private GameObject carriedBox;
 
+    // Buffer dipakai ulang supaya OverlapSphere tidak membuat array baru tiap tekan Interact
+    private readonly Collider[] dropHits = new Collider[16];
+
     public Transform holdPoint;
 
     [Header("Deteksi Taruh / Curi Kotak (Drop Zone)")]
@@ -57,14 +60,15 @@ public class PlayerInteraction : MonoBehaviour
     private BoxStorage GetNearestDropZone()
     {
         Vector3 pos = transform.position;
-        Collider[] hits = Physics.OverlapSphere(pos, dropRadius + 1f, ~0, QueryTriggerInteraction.Collide);
+        int hitCount = Physics.OverlapSphereNonAlloc(pos, dropRadius + 1f, dropHits, ~0, QueryTriggerInteraction.Collide);
 
         BoxStorage best = null;
         float bestEdge = float.MaxValue;
         float bestCenter = float.MaxValue;
 
-        foreach (Collider h in hits)
+        for (int i = 0; i < hitCount; i++)
         {
+            Collider h = dropHits[i];
             if (!h.CompareTag("DropZone")) continue;
 
             BoxStorage storage = h.GetComponent<BoxStorage>();
@@ -100,7 +104,7 @@ public class PlayerInteraction : MonoBehaviour
 
         foreach (GameObject b in nearbyBoxes)
         {
-            if (b == null || !b.CompareTag("Box"))
+            if (b == null || !b.activeInHierarchy || !b.CompareTag("Box"))
             {
                 if (dead == null) dead = new List<GameObject>();
                 dead.Add(b);
@@ -136,9 +140,9 @@ public class PlayerInteraction : MonoBehaviour
                 // Taruh Kotak
                 if (carriedBox != null)
                 {
+                    // AddBox mengembalikan kotak ke pool (nonaktif + parent diatur pool),
+                    // jadi tidak perlu SetParent(null) lagi di sini.
                     dropZone.AddBox(carriedBox);
-
-                    carriedBox.transform.SetParent(null);
                     carriedBox = null;
 
                     PlaySfx(dropSfx);
