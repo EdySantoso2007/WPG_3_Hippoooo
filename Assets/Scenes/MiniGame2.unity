@@ -665,8 +665,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxStorage
   storageStartPoint: {fileID: 1044815169}
-  spacing: 0.3
-  boxesPerRow: 5
   scoreText: {fileID: 1964526946}
 --- !u!1 &110052763
 GameObject:
@@ -1145,8 +1143,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxStorage
   storageStartPoint: {fileID: 384820126}
-  spacing: 0.3
-  boxesPerRow: 5
   scoreText: {fileID: 832632083}
 --- !u!1001 &176379773
 PrefabInstance:
@@ -1852,7 +1848,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dc10eabc1aaf3e942abdb803b900a23d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxSpawner
-  boxPrefab: {fileID: 410519893509112217, guid: 97e62abc98ee0fb44ad374a57a5bbc30, type: 3}
   maxBoxes: 7
   spawnInterval: 3
 --- !u!4 &452239786
@@ -2582,8 +2577,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxStorage
   storageStartPoint: {fileID: 1542167078}
-  spacing: 0.3
-  boxesPerRow: 5
   scoreText: {fileID: 1918974209}
 --- !u!1 &777561153 stripped
 GameObject:
@@ -3434,8 +3427,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxStorage
   storageStartPoint: {fileID: 2085378698}
-  spacing: 0.3
-  boxesPerRow: 5
   scoreText: {fileID: 241940038}
 --- !u!1 &978080153
 GameObject:
@@ -3994,6 +3985,53 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 3613567641014311022, guid: 6d652af2f2b705c42a45276604af9469, type: 3}
+--- !u!1 &1173723316
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1173723318}
+  - component: {fileID: 1173723317}
+  m_Layer: 0
+  m_Name: BoxPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1173723317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173723316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a267ccfd1017784a88afc91976f05fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoxPool
+  boxPrefab: {fileID: 410519893509112217, guid: 97e62abc98ee0fb44ad374a57a5bbc30, type: 3}
+  initialSize: 10
+  canExpand: 1
+--- !u!4 &1173723318
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1173723316}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -5.80568, y: 2.78116, z: -4.12}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1181719457
 GameObject:
   m_ObjectHideFlags: 0
@@ -4488,7 +4526,7 @@ Transform:
   m_GameObject: {fileID: 1288118165}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.661, y: 3.901, z: 2.441}
+  m_LocalPosition: {x: 2.719, y: 3.691, z: 2.441}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7984,3 +8022,4 @@ SceneRoots:
   - {fileID: 110052767}
   - {fileID: 1886089868}
   - {fileID: 1288118166}
+  - {fileID: 1173723318}

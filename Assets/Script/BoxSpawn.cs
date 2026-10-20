@@ -5,11 +5,10 @@ using System.Collections.Generic;
 public class BoxSpawner : MonoBehaviour
 {
     [Header("Pengaturan Spawner")]
-    public GameObject boxPrefab; // Masukkan Prefab Kotak ke sini
-    public int maxBoxes = 4;     // Maksimal kotak yang boleh ada di conveyor
-    public float spawnInterval = 2f; // Waktu jeda antar spawn
+    public int maxBoxes = 4;          // Maksimal kotak yang boleh ada di conveyor
+    public float spawnInterval = 2f;  // Waktu jeda antar spawn
 
-    private List<GameObject> activeBoxes = new List<GameObject>();
+    private readonly List<GameObject> activeBoxes = new List<GameObject>();
 
     void Start()
     {
@@ -18,23 +17,30 @@ public class BoxSpawner : MonoBehaviour
 
     IEnumerator SpawnRoutine()
     {
+        WaitForSeconds wait = new WaitForSeconds(spawnInterval);
+
         while (true)
         {
             // BERSIH-BERSIH LIST:
-            // Hapus kotak dari daftar jika kotak sudah hancur (null)
-            // ATAU kotak sudah diambil pemain (parent tidak null)
-            activeBoxes.RemoveAll(box => box == null || box.transform.parent != null);
+            // Hapus kotak dari daftar jika sudah hancur / nonaktif (kembali ke pool)
+            // ATAU sudah diambil pemain (parent tidak null)
+            activeBoxes.RemoveAll(box => box == null || !box.activeInHierarchy || box.transform.parent != null);
 
-            // Jika jumlah kotak yang jalan di conveyor masih kurang dari batas
             if (activeBoxes.Count < maxBoxes)
             {
-                // Clone kotak baru
-                GameObject newBox = Instantiate(boxPrefab, transform.position, transform.rotation);
-                activeBoxes.Add(newBox);
+                if (BoxPool.Instance == null)
+                {
+                    Debug.LogError("[BoxSpawner] Tidak ada BoxPool di scene!");
+                }
+                else
+                {
+                    // Ambil kotak dari pool (bukan Instantiate)
+                    GameObject newBox = BoxPool.Instance.Get(transform.position, transform.rotation);
+                    if (newBox != null) activeBoxes.Add(newBox);
+                }
             }
 
-            // Tunggu beberapa detik sebelum cek lagi
-            yield return new WaitForSeconds(spawnInterval);
+            yield return wait;
         }
     }
 }
