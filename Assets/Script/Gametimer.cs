@@ -1,5 +1,6 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
@@ -13,7 +14,12 @@ public class GameTimer : MonoBehaviour
     public TMP_Text timeText;
 
     [Header("UI Waktu Habis")]
-    public GameObject timeUpPanel;        // Panel berisi Image (sprite) "Waktu Habis" + teks skor
+    [Tooltip("Panel berisi sprite 'Waktu Habis' + teks skor. CanvasGroup ditambahkan otomatis kalau belum ada.")]
+    public GameObject timeUpPanel;
+    [Tooltip("Lama panel fade-in (detik).")]
+    public float fadeInDuration = 0.8f;
+    [Tooltip("Lama panel tampil penuh (detik) setelah fade-in selesai, sebelum pindah scene.")]
+    public float showDuration = 3f;
 
     [Header("Skor Akhir (urutan harus sama)")]
     public BoxStorage[] storages;         // Drop Zone (maks 4)
@@ -21,40 +27,33 @@ public class GameTimer : MonoBehaviour
     public string[] storageNames;         // (Opsional) Nama tiap zona, misal "Player 1"
     public TMP_Text winnerText;           // (Opsional) Teks pemenang
 
-    [Header("Tombol Setelah Waktu Habis")]
-    public Button backToMenuButton;
-    public Button nextGameButton;
-
     [Header("Nama Scene")]
-    public string menuSceneName = "MainMenu";
-    public string nextGameSceneName = "";
+    public string podiumSceneName = "Podium";
+
+    private bool timeUpTriggered = false;
 
     void Start()
     {
         // Tampilkan angka awal (03:00)
         DisplayTime(timeRemaining);
 
-        // Sembunyikan panel & tombol saat game baru mulai
+        // Sembunyikan panel saat game baru mulai
         if (timeUpPanel != null)
         {
             timeUpPanel.SetActive(false);
         }
-        SetButtonsActive(false);
 
-        // Pasang fungsi ke tombol
-        if (backToMenuButton != null)
-        {
-            backToMenuButton.onClick.RemoveAllListeners();
-            backToMenuButton.onClick.AddListener(BackToMenu);
-        }
+        // Jalankan timer SETELAH hitungan 3,2,1 dan teks GO! selesai
+        StartCoroutine(StartAfterIntro());
+    }
 
-        if (nextGameButton != null)
-        {
-            nextGameButton.onClick.RemoveAllListeners();
-            nextGameButton.onClick.AddListener(NextGame);
-        }
+    IEnumerator StartAfterIntro()
+    {
+        // Selama hitungan + GO!, kamera menyetel InputLocked = true.
+        // Coroutine ini berjalan per frame, jadi tetap jalan walau Time.timeScale = 0.
+        while (DynamicMultiplayerCamera.InputLocked)
+            yield return null;
 
-        // Langsung jalankan timer
         StartTimer();
     }
 
@@ -75,6 +74,9 @@ public class GameTimer : MonoBehaviour
 
     void TimeUp()
     {
+        if (timeUpTriggered) return;
+        timeUpTriggered = true;
+
         timeRemaining = 0;
         timerIsRunning = false;
         DisplayTime(timeRemaining);
@@ -82,46 +84,48 @@ public class GameTimer : MonoBehaviour
         // Freeze semua pergerakan game
         Time.timeScale = 0f;
 
-        // Munculkan sprite UI waktu habis + skor akhir + tombol
-        if (timeUpPanel != null)
-        {
-            timeUpPanel.SetActive(true);
-        }
-
+        // Hitung & simpan skor (untuk teks di panel dan scene Podium)
         ShowFinalScore();
-        SetButtonsActive(true);
 
         Debug.Log("Waktu Habis! Game Berhenti Total.");
+
+        StartCoroutine(TimeUpSequence());
     }
 
-    void SetButtonsActive(bool active)
+    // Panel fade-in -> tunggu beberapa detik -> pindah ke scene Podium.
+    // Semua pakai waktu nyata (unscaled) karena Time.timeScale = 0.
+    IEnumerator TimeUpSequence()
     {
-        if (backToMenuButton != null)
+        if (timeUpPanel != null)
         {
-            backToMenuButton.gameObject.SetActive(active);
+            CanvasGroup cg = timeUpPanel.GetComponent<CanvasGroup>();
+            if (cg == null) cg = timeUpPanel.AddComponent<CanvasGroup>();
+
+            cg.alpha = 0f;
+            cg.interactable = false;
+            cg.blocksRaycasts = false;
+            timeUpPanel.SetActive(true);
+
+            float t = 0f;
+            while (t < fadeInDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                cg.alpha = Mathf.Clamp01(t / fadeInDuration);
+                yield return null;
+            }
+            cg.alpha = 1f;
         }
 
-        if (nextGameButton != null)
-        {
-            nextGameButton.gameObject.SetActive(active);
-        }
-    }
+        yield return new WaitForSecondsRealtime(showDuration);
 
-    public void BackToMenu()
-    {
-        LoadScene(menuSceneName);
-    }
-
-    public void NextGame()
-    {
-        LoadScene(nextGameSceneName);
+        LoadScene(podiumSceneName);
     }
 
     void LoadScene(string sceneName)
     {
         if (string.IsNullOrEmpty(sceneName))
         {
-            Debug.LogWarning("Nama scene belum diisi di Inspector GameTimer!");
+            Debug.LogWarning("Nama scene Podium belum diisi di Inspector GameTimer!");
             return;
         }
 
@@ -130,20 +134,33 @@ public class GameTimer : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
+    // Jumlah pemain yang benar-benar ikut main.
+    // Kalau tidak lewat Room/Lobby (testing langsung di scene ini), semua Drop Zone dianggap ikut.
+    int GetActivePlayerCount()
+    {
+        int max = storages != null ? storages.Length : 0;
+        int joined = RoomBridge.JoinedPlayers.Count;
+        return joined > 0 ? Mathf.Min(joined, max) : max;
+    }
+
     void ShowFinalScore()
     {
         if (storages == null || finalScoreTexts == null) return;
+
+        int activeCount = GetActivePlayerCount();
 
         int highScore = -1;
         int winnerIndex = -1;
         bool isDraw = false;
 
+        List<PlayerResult> results = new List<PlayerResult>();
+
         for (int i = 0; i < finalScoreTexts.Length; i++)
         {
             if (finalScoreTexts[i] == null) continue;
 
-            // Kalau teks lebih banyak dari Drop Zone, sembunyikan sisanya
-            if (i >= storages.Length || storages[i] == null)
+            // Sembunyikan teks untuk Drop Zone tanpa pemain
+            if (i >= activeCount || storages[i] == null)
             {
                 finalScoreTexts[i].gameObject.SetActive(false);
                 continue;
@@ -153,6 +170,14 @@ public class GameTimer : MonoBehaviour
 
             int score = storages[i].GetScore();
             finalScoreTexts[i].text = score.ToString();
+
+            // Catat untuk scene Podium (playerIndex = urutan Drop Zone = urutan warna join)
+            results.Add(new PlayerResult
+            {
+                playerIndex = i,
+                playerName = GetZoneName(i),
+                score = score
+            });
 
             if (score > highScore)
             {
@@ -165,6 +190,9 @@ public class GameTimer : MonoBehaviour
                 isDraw = true;
             }
         }
+
+        // Simpan & urutkan ranking untuk scene Podium
+        ScoreBridge.SetResults(results);
 
         if (winnerText != null)
         {
