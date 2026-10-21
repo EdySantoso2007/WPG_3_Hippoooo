@@ -1,5 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 
 [RequireComponent(typeof(Camera))]
 public class DynamicMultiplayerCamera : MonoBehaviour
@@ -41,6 +44,51 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     [Tooltip("Sisi bawah layar. Isi negatif (misal -3) jika bawah layar tertutup UI skor")]
     public float marginBottom = 0.5f;
 
+    // ------------------------------------------------------------
+    //  INTRO: HITUNGAN SEBELUM ZOOM KE PEMAIN
+    // ------------------------------------------------------------
+    [Header("Intro Hitungan (sebelum zoom ke pemain)")]
+    public bool useIntro = true;
+    [Tooltip("Titik yang dilihat kamera selama hitungan. Kosongkan = tengah map (dari Map Min / Map Max).")]
+    public Transform introFocus;
+    [Tooltip("Field of View selama hitungan. Makin besar = makin jauh / luas.")]
+    public float introFOV = 70f;
+    [Tooltip("Angka awal hitungan (3 = 3,2,1 atau 1,2,3 tergantung opsi di bawah)")]
+    public int countdownFrom = 3;
+    [Tooltip("Centang: 3,2,1. Hilangkan centang: 1,2,3.")]
+    public bool countDownwards = true;
+    public float secondsPerCount = 1f;
+    [Tooltip("Teks setelah hitungan selesai. Kosongkan kalau tidak mau.")]
+    public string goText = "GO!";
+    [Tooltip("Lama teks GO! tampil. Selama ini kamera MASIH diam, baru bergerak ke pemain setelahnya.")]
+    public float goDuration = 0.8f;
+    [Tooltip("Ukuran awal teks GO! (efek menghantam: besar lalu mengecil ke ukuran normal).")]
+    public float goStartScale = 2.5f;
+    [Tooltip("Teks TextMeshPro (di Canvas) untuk menampilkan angka hitungan. Boleh kosong.")]
+    public TextMeshProUGUI countdownText;
+    [Tooltip("Centang: game dijeda (Time.timeScale = 0) selama hitungan, lalu jalan lagi setelah selesai.")]
+    public bool freezeGameDuringCountdown = true;
+
+    [Header("Transisi Zoom ke Pemain (setelah hitungan)")]
+    [Tooltip("Makin besar = kamera bergerak ke pemain makin pelan.")]
+    public float transitionSmoothTime = 1.2f;
+    [Tooltip("Kecepatan zoom FOV selama transisi (normal = 3).")]
+    public float transitionZoomSpeed = 2f;
+    [Tooltip("Berapa detik pengaturan transisi di atas dipakai sebelum kembali normal.")]
+    public float transitionDuration = 1.5f;
+
+    [Tooltip("Dipanggil tepat setelah hitungan selesai (misalnya untuk memulai timer game).")]
+    public UnityEvent onCountdownFinished;
+
+    // Script lain bisa mengecek ini (misalnya agar pemain tidak bisa gerak saat hitungan)
+    public bool IsIntroPlaying { get; private set; }
+
+    /// <summary>
+    /// True selama hitungan sampai teks GO! selesai. Dipakai PlayerMovement / PlayerInteraction
+    /// untuk mengunci pemain. Tidak bergantung pada Time.timeScale, jadi tetap aman walau script lain mengubahnya.
+    /// </summary>
+    public static bool InputLocked { get; private set; }
+
     // --- VARIABEL TRIGGER SHAKE ---
     private float shakeTimeRemaining;
     private float shakePower;
@@ -50,19 +98,160 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     private Vector3 velocity;
     private Camera cam;
 
+    // --- VARIABEL INTRO ---
+    private Vector3 introPosition;
+    private float transitionTimer;
+    private bool timeFrozenByIntro;
+    private float savedTimeScale = 1f;
+    private Coroutine introRoutine;
+
+    // Frame yang lag (misalnya saat scene baru selesai loading) dihitung maksimal segini,
+    // supaya satu frame berat tidak melompati angka hitungan.
+    private const float MaxFrameTime = 0.05f;
+    private const int WarmupFrames = 5;
+
+    void Awake()
+    {
+        // Kunci sedini mungkin, sebelum pemain sempat bergerak
+        InputLocked = useIntro;
+    }
+
     void Start()
     {
         cam = GetComponent<Camera>();
         currentSmoothPosition = transform.position;
+
+        if (useIntro) PlayIntro();
+    }
+
+    void OnDisable()
+    {
+        RestoreTimeScale();
+        InputLocked = false;
+    }
+
+    void OnDestroy()
+    {
+        RestoreTimeScale();
+        InputLocked = false;
     }
 
     void LateUpdate()
     {
+        // Selama hitungan: kamera diam di sudut pandang awal (jauh / luas)
+        if (IsIntroPlaying)
+        {
+            HoldIntroView();
+            return;
+        }
+
         if (targets == null || targets.Count == 0) return;
 
         Move();
         Zoom();
+
+        if (transitionTimer > 0f) transitionTimer -= Time.deltaTime;
     }
+
+    // ------------------------------------------------------------
+    //  INTRO
+    // ------------------------------------------------------------
+
+    // Bisa dipanggil lagi dari script lain untuk mengulang hitungan (misalnya saat ronde baru)
+    public void PlayIntro()
+    {
+        if (cam == null) cam = GetComponent<Camera>();
+        InputLocked = true;
+
+        if (introRoutine != null) StopCoroutine(introRoutine);
+
+        Vector3 focus = introFocus != null
+            ? introFocus.position
+            : new Vector3((mapMin.x + mapMax.x) * 0.5f, groundY, (mapMin.y + mapMax.y) * 0.5f);
+
+        introPosition = focus + offset;
+        introRoutine = StartCoroutine(IntroRoutine());
+    }
+
+    void HoldIntroView()
+    {
+        transform.position = introPosition;
+        currentSmoothPosition = introPosition;
+        velocity = Vector3.zero;
+        cam.fieldOfView = introFOV;
+    }
+
+    IEnumerator IntroRoutine()
+    {
+        IsIntroPlaying = true;
+        HoldIntroView();
+
+        if (freezeGameDuringCountdown && !timeFrozenByIntro)
+        {
+            savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+            Time.timeScale = 0f;
+            timeFrozenByIntro = true;
+        }
+
+        // Beri waktu beberapa frame setelah scene selesai dimuat (frame awal biasanya berat / lag)
+        for (int f = 0; f < WarmupFrames; f++)
+            yield return null;
+
+        // Hitungan angka (pakai waktu real, supaya tetap jalan walau Time.timeScale = 0)
+        for (int i = 0; i < countdownFrom; i++)
+        {
+            int number = countDownwards ? countdownFrom - i : i + 1;
+            yield return ShowText(number.ToString(), secondsPerCount);
+        }
+
+        // Teks "GO!" tampil saat kamera MASIH diam di sudut pandang awal
+        if (!string.IsNullOrEmpty(goText))
+            yield return ShowText(goText, goDuration, goStartScale);
+
+        if (countdownText != null) countdownText.gameObject.SetActive(false);
+
+        // Setelah GO!: game jalan lagi, pemain boleh bergerak, kamera mulai bergerak / zoom ke pemain
+        RestoreTimeScale();
+        IsIntroPlaying = false;
+        InputLocked = false;
+        transitionTimer = transitionDuration;
+        onCountdownFinished?.Invoke();
+        introRoutine = null;
+    }
+
+    IEnumerator ShowText(string message, float duration, float startScale = 1.6f)
+    {
+        if (countdownText != null)
+        {
+            countdownText.gameObject.SetActive(true);
+            countdownText.text = message;
+        }
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Mathf.Min(Time.unscaledDeltaTime, MaxFrameTime);
+
+            // Efek "pop": angka muncul besar lalu mengecil
+            if (countdownText != null)
+            {
+                float pop = Mathf.Clamp01(t / 0.25f);
+                countdownText.rectTransform.localScale = Vector3.one * Mathf.Lerp(startScale, 1f, pop);
+            }
+            yield return null;
+        }
+    }
+
+    void RestoreTimeScale()
+    {
+        if (!timeFrozenByIntro) return;
+        Time.timeScale = savedTimeScale;
+        timeFrozenByIntro = false;
+    }
+
+    // ------------------------------------------------------------
+    //  GERAK & ZOOM
+    // ------------------------------------------------------------
 
     void Move()
     {
@@ -72,8 +261,11 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         // Batasi posisi kamera agar area luar map tidak terlihat
         if (useMapBounds) targetPosition = ClampToMap(targetPosition);
 
+        // Saat transisi setelah hitungan, kamera bergerak lebih pelan
+        float activeSmoothTime = transitionTimer > 0f ? transitionSmoothTime : smoothTime;
+
         // 1. Hitung pergerakan mulus kamera dasar
-        currentSmoothPosition = Vector3.SmoothDamp(currentSmoothPosition, targetPosition, ref velocity, smoothTime);
+        currentSmoothPosition = Vector3.SmoothDamp(currentSmoothPosition, targetPosition, ref velocity, activeSmoothTime);
 
         Vector3 shakeOffset = Vector3.zero;
 
@@ -109,7 +301,10 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         float zoomRatio = activeDistance / zoomLimiter;
         float targetFOV = Mathf.Lerp(minZoom, maxZoom, zoomRatio);
 
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * 3f);
+        // Saat transisi setelah hitungan, zoom lebih pelan
+        float zoomSpeed = transitionTimer > 0f ? transitionZoomSpeed : 3f;
+
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
     }
 
     // ------------------------------------------------------------

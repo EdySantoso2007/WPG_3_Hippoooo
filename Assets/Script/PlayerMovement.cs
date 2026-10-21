@@ -36,6 +36,22 @@ public class PlayerMovement : MonoBehaviour
     private InputAction moveAction;
     private InputAction dashAction;
 
+    // --- Conveyor ---
+    private Vector3 conveyorVelocity;
+    private float conveyorUntil;
+
+    // Dipanggil ConveyorBelt selama player menapak di atasnya
+    public void ApplyConveyor(Vector3 velocity)
+    {
+        conveyorVelocity = velocity;
+        conveyorUntil = Time.fixedTime + 0.1f; // berlaku sebentar, otomatis berhenti kalau turun dari conveyor
+    }
+
+    private Vector3 GetConveyorVelocity()
+    {
+        return Time.fixedTime < conveyorUntil ? conveyorVelocity : Vector3.zero;
+    }
+
     // --- Animator ---
     private Animator animator;
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -57,6 +73,14 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         if (Time.timeScale == 0f) return;
+
+        // Hitungan awal sampai GO! selesai: pemain tidak boleh bergerak / dash
+        if (DynamicMultiplayerCamera.InputLocked)
+        {
+            moveInput = Vector2.zero;
+            if (animator != null) animator.SetFloat(SpeedHash, 0f);
+            return;
+        }
 
         // Saat stun: diam, animasi Speed kembali 0
         if (isStunned)
@@ -86,6 +110,14 @@ public class PlayerMovement : MonoBehaviour
     {
         if (Time.timeScale == 0f) return;
 
+        // Hitungan awal sampai GO! selesai: tahan karakter di tempat
+        if (DynamicMultiplayerCamera.InputLocked)
+        {
+            rb.angularVelocity = Vector3.zero;
+            rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
+            return;
+        }
+
         // Cegah karakter berputar sendiri akibat fisika (rotasi diatur lewat script)
         rb.angularVelocity = Vector3.zero;
 
@@ -93,12 +125,15 @@ public class PlayerMovement : MonoBehaviour
 
         if (isDashing)
         {
-            rb.linearVelocity = transform.forward * dashForce;
+            rb.linearVelocity = transform.forward * dashForce + GetConveyorVelocity();
             return;
         }
 
         // Pergerakan Normal
-        rb.linearVelocity = new Vector3(moveInput.x * moveSpeed, rb.linearVelocity.y, moveInput.y * moveSpeed);
+        Vector3 conveyor = GetConveyorVelocity();
+        rb.linearVelocity = new Vector3(moveInput.x * moveSpeed + conveyor.x,
+                                        rb.linearVelocity.y,
+                                        moveInput.y * moveSpeed + conveyor.z);
 
         // Rotasi Normal
         Vector3 moveDirection = new Vector3(moveInput.x, 0f, moveInput.y);
