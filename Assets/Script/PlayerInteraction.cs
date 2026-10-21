@@ -130,6 +130,9 @@ public class PlayerInteraction : MonoBehaviour
         // CEK STUN: Jika sedang stun, batalkan semua perintah interaksi
         if (playerMovement != null && playerMovement.isStunned) return;
 
+        // Hitungan awal sampai GO! selesai: pemain tidak boleh berinteraksi
+        if (DynamicMultiplayerCamera.InputLocked) return;
+
         if (interactAction != null && interactAction.WasPressedThisFrame())
         {
             BoxStorage dropZone = GetNearestDropZone();

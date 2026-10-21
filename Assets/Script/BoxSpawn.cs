@@ -8,10 +8,21 @@ public class BoxSpawner : MonoBehaviour
     public int maxBoxes = 4;          // Maksimal kotak yang boleh ada di conveyor
     public float spawnInterval = 2f;  // Waktu jeda antar spawn
 
+    [Header("Jalur Conveyor")]
+    [Tooltip("Objek ConveyorPath. Kotak yang muncul berjalan mengikuti waypoint-nya.")]
+    public ConveyorPath path;
+    [Tooltip("Kecepatan kotak di conveyor (meter/detik).")]
+    public float conveyorSpeed = 3f;
+    [Tooltip("Jarak minimal antar kotak saat antri di conveyor (meter). Kecilkan kalau terlalu renggang.")]
+    public float boxSpacing = 0.9f;
+
     private readonly List<GameObject> activeBoxes = new List<GameObject>();
 
     void Start()
     {
+        if (path == null)
+            Debug.LogWarning("[BoxSpawner] Kolom Path di '" + name + "' masih kosong! Kotak tidak akan mengikuti waypoint.", this);
+
         StartCoroutine(SpawnRoutine());
     }
 
@@ -21,7 +32,6 @@ public class BoxSpawner : MonoBehaviour
 
         while (true)
         {
-            // BERSIH-BERSIH LIST:
             // Hapus kotak dari daftar jika sudah hancur / nonaktif (kembali ke pool)
             // ATAU sudah diambil pemain (parent tidak null)
             activeBoxes.RemoveAll(box => box == null || !box.activeInHierarchy || box.transform.parent != null);
@@ -36,7 +46,20 @@ public class BoxSpawner : MonoBehaviour
                 {
                     // Ambil kotak dari pool (bukan Instantiate)
                     GameObject newBox = BoxPool.Instance.Get(transform.position, transform.rotation);
-                    if (newBox != null) activeBoxes.Add(newBox);
+                    if (newBox != null)
+                    {
+                        activeBoxes.Add(newBox);
+
+                        // Suruh kotak berjalan mengikuti waypoint
+                        if (path != null)
+                        {
+                            BoxPathFollower follower = newBox.GetComponent<BoxPathFollower>();
+                            if (follower == null) follower = newBox.AddComponent<BoxPathFollower>();
+                            follower.speed = conveyorSpeed;
+                            follower.spacing = boxSpacing;
+                            follower.Begin(path);
+                        }
+                    }
                 }
             }
 

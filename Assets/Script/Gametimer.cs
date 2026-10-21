@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -54,7 +55,17 @@ public class GameTimer : MonoBehaviour
             nextGameButton.onClick.AddListener(NextGame);
         }
 
-        // Langsung jalankan timer
+        // Jalankan timer SETELAH hitungan 3,2,1 dan teks GO! selesai
+        StartCoroutine(StartAfterIntro());
+    }
+
+    IEnumerator StartAfterIntro()
+    {
+        // Selama hitungan + GO!, kamera menyetel InputLocked = true.
+        // Coroutine ini berjalan per frame, jadi tetap jalan walau Time.timeScale = 0.
+        while (DynamicMultiplayerCamera.InputLocked)
+            yield return null;
+
         StartTimer();
     }
 
