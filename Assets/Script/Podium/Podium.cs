@@ -12,6 +12,10 @@ public class Podium : MonoBehaviour
              "otomatis dibuang dari salinan yang muncul di podium.")]
     public GameObject characterPrefab;
 
+    [Tooltip("(Opsional) Animator Controller khusus podium yang punya state Rank1..Rank4. " +
+             "Kosongkan kalau state-nya ditaruh di controller bawaan hippo.")]
+    public RuntimeAnimatorController podiumController;
+
     [Tooltip("Urutan: [0] Merah, [1] Biru, [2] Hijau, [3] Kuning (sama seperti PlayerManager)")]
     public Texture2D[] playerTextures;
 
@@ -19,6 +23,11 @@ public class Podium : MonoBehaviour
     [Tooltip("[0] Juara 1 (tengah)\n[1] Juara 2 (kanan)\n[2] Juara 3 (kiri)\n[3] Juara 4 (di kiri juara 3)\n" +
              "Rotasi tiap titik = arah hadap karakter (hadapkan ke kamera).")]
     public Transform[] slots = new Transform[4];
+
+    [Header("Animasi per Posisi")]
+    [Tooltip("Nama STATE di Animator Controller untuk tiap posisi (urutan sama dengan Slots). " +
+             "Dimainkan begitu karakter muncul.")]
+    public string[] rankStates = { "Rank1", "Rank2", "Rank3", "Rank4" };
 
     [Header("Label Teks (opsional, urutan sama dengan Slots)")]
     public TMP_Text[] slotLabels;
@@ -29,37 +38,32 @@ public class Podium : MonoBehaviour
     public float revealInterval = 1f;
     public float popDuration = 0.4f;
 
-    [Header("Animator (opsional, kosongkan kalau tidak ada)")]
-    [Tooltip("Nama parameter Trigger di Animator untuk pose juara 1 (misal: Win)")]
-    public string winnerTrigger = "";
-    [Tooltip("Nama parameter Trigger di Animator untuk pemain lain (misal: Lose)")]
-    public string loserTrigger = "";
-
-    [Header("Tombol")]
-    public Button backToMenuButton;
-    public string menuSceneName = "MainMenu";
+    [Header("Pindah ke Scene Berikutnya (Scene Dipecat)")]
+    public string nextSceneName = "";
+    [Tooltip("Centang: otomatis pindah setelah semua karakter tampil + jeda di bawah.")]
+    public bool autoLoadNextScene = true;
+    [Tooltip("Lama podium dilihat (detik) setelah juara 1 muncul, sebelum pindah scene.")]
+    public float delayBeforeNextScene = 5f;
+    [Tooltip("(Opsional) Tombol untuk melewati podium. Muncul setelah semua karakter tampil.")]
+    public Button continueButton;
 
     [Header("Testing")]
     [Tooltip("Kalau scene Podium dijalankan langsung (tanpa lewat minigame), pakai skor acak.")]
     public bool useTestDataIfEmpty = true;
     [Range(2, 4)] public int testPlayerCount = 4;
 
-    // Property material (URP Lit = _BaseMap, Built-in = _MainTex)
-    private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
-    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-    private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-    private static readonly int ColorId = Shader.PropertyToID("_Color");
+    private bool isLoading;
 
     void Start()
     {
         // Jaga-jaga kalau scene sebelumnya meninggalkan game dalam keadaan freeze
         Time.timeScale = 1f;
 
-        if (backToMenuButton != null)
+        if (continueButton != null)
         {
-            backToMenuButton.onClick.RemoveAllListeners();
-            backToMenuButton.onClick.AddListener(BackToMenu);
-            backToMenuButton.gameObject.SetActive(false); // muncul setelah semua karakter tampil
+            continueButton.onClick.RemoveAllListeners();
+            continueButton.onClick.AddListener(LoadNextScene);
+            continueButton.gameObject.SetActive(false); // muncul setelah semua karakter tampil
         }
 
         if (!ScoreBridge.HasResults)
@@ -73,7 +77,6 @@ public class Podium : MonoBehaviour
             {
                 Debug.LogWarning("[Podium] Tidak ada data skor dari minigame.");
                 HideAllLabels();
-                ShowButton();
                 return;
             }
         }
@@ -94,129 +97,64 @@ public class Podium : MonoBehaviour
                 continue;
             }
 
-            GameObject go = SpawnCharacter(slots[i], results[i].playerIndex);
+            int pi = results[i].playerIndex;
+            Texture2D tex = (playerTextures != null && pi >= 0 && pi < playerTextures.Length) ? playerTextures[pi] : null;
+
+            GameObject go = PodiumCharacterUtil.Spawn(characterPrefab, transform,
+                                                      slots[i].position, slots[i].rotation, tex, podiumController);
             spawned.Add(go);
             SetLabel(i, results[i]);
         }
 
+        StartCoroutine(PodiumRoutine(spawned));
+    }
+
+    // ---------- Alur utama ----------
+
+    private IEnumerator PodiumRoutine(List<GameObject> spawned)
+    {
         if (useReveal)
-            StartCoroutine(RevealRoutine(spawned, results));
-        else
-            FinishReveal(spawned, results);
-    }
-
-    // ---------- Spawn ----------
-
-    private GameObject SpawnCharacter(Transform slot, int playerIndex)
-    {
-        if (characterPrefab == null)
         {
-            Debug.LogError("[Podium] Character Prefab belum diisi!");
-            return null;
-        }
+            // Sembunyikan semua dulu
+            foreach (GameObject go in spawned)
+                if (go != null) go.SetActive(false);
 
-        // Dibuat di bawah induk NONAKTIF dulu, supaya Awake/OnEnable script player
-        // (PlayerInput, PlayerMovement, dll) tidak sempat jalan sebelum dibuang.
-        GameObject holder = new GameObject("PodiumHolder");
-        holder.SetActive(false);
-
-        GameObject go = Instantiate(characterPrefab, holder.transform);
-        StripGameplayComponents(go);
-
-        if (playerTextures != null && playerIndex >= 0 && playerIndex < playerTextures.Length)
-            ApplyTexture(go, playerTextures[playerIndex]);
-
-        // Pindahkan keluar dari holder ke titik podium (menjadi aktif di sini)
-        go.transform.SetParent(transform, false);
-        go.transform.SetPositionAndRotation(slot.position, slot.rotation);
-
-        Destroy(holder);
-        return go;
-    }
-
-    private static void StripGameplayComponents(GameObject go)
-    {
-        // 1. Script (PlayerInput, PlayerMovement, PlayerInteraction, dst), kecuali UI / TMP
-        foreach (MonoBehaviour mb in go.GetComponentsInChildren<MonoBehaviour>(true))
-        {
-            if (mb == null) continue;
-
-            string ns = mb.GetType().Namespace;
-            if (ns != null && (ns.StartsWith("TMPro") || ns.StartsWith("UnityEngine.UI"))) continue;
-
-            DestroyImmediate(mb);
-        }
-
-        // 2. Fisika & audio (harus setelah script, karena PlayerMovement butuh Rigidbody)
-        foreach (Rigidbody r in go.GetComponentsInChildren<Rigidbody>(true)) DestroyImmediate(r);
-        foreach (Collider c in go.GetComponentsInChildren<Collider>(true)) DestroyImmediate(c);
-        foreach (AudioSource a in go.GetComponentsInChildren<AudioSource>(true)) DestroyImmediate(a);
-    }
-
-    private void ApplyTexture(GameObject player, Texture2D texture)
-    {
-        if (texture == null) return;
-
-        Animator animator = player.GetComponentInChildren<Animator>(true);
-        Transform modelRoot = animator != null ? animator.transform : player.transform;
-
-        foreach (Renderer r in modelRoot.GetComponentsInChildren<Renderer>(true))
-        {
-            foreach (Material m in r.materials)
+            // Muncul dari peringkat terbawah sampai juara 1
+            for (int i = spawned.Count - 1; i >= 0; i--)
             {
-                if (m.HasProperty(BaseMapId))
+                yield return new WaitForSeconds(revealInterval);
+
+                if (spawned[i] != null)
                 {
-                    m.SetTexture(BaseMapId, texture);
-                    if (m.HasProperty(BaseColorId)) m.SetColor(BaseColorId, Color.white);
+                    yield return StartCoroutine(PopIn(spawned[i]));
+                    PlayPositionAnimation(spawned[i], i);
                 }
-                else if (m.HasProperty(MainTexId))
-                {
-                    m.SetTexture(MainTexId, texture);
-                    if (m.HasProperty(ColorId)) m.SetColor(ColorId, Color.white);
-                }
+
+                ShowLabel(i);
             }
         }
-    }
-
-    // ---------- Label ----------
-
-    private void HideAllLabels()
-    {
-        if (slotLabels == null) return;
-        foreach (TMP_Text t in slotLabels)
-            if (t != null) t.gameObject.SetActive(false);
-    }
-
-    private void SetLabel(int slotIndex, PlayerResult r)
-    {
-        if (slotLabels == null || slotIndex >= slotLabels.Length || slotLabels[slotIndex] == null) return;
-
-        slotLabels[slotIndex].text = r.playerName + "\n" + r.score;
-        slotLabels[slotIndex].gameObject.SetActive(!useReveal); // kalau pakai reveal, muncul belakangan
-    }
-
-    // ---------- Reveal ----------
-
-    private IEnumerator RevealRoutine(List<GameObject> spawned, List<PlayerResult> results)
-    {
-        // Sembunyikan semua dulu
-        foreach (GameObject go in spawned)
-            if (go != null) go.SetActive(false);
-
-        // Muncul dari peringkat terbawah sampai juara 1
-        for (int i = spawned.Count - 1; i >= 0; i--)
+        else
         {
-            yield return new WaitForSeconds(revealInterval);
-
-            if (spawned[i] != null)
-                yield return StartCoroutine(PopIn(spawned[i]));
-
-            if (slotLabels != null && i < slotLabels.Length && slotLabels[i] != null)
-                slotLabels[i].gameObject.SetActive(true);
+            for (int i = 0; i < spawned.Count; i++)
+            {
+                PlayPositionAnimation(spawned[i], i);
+                ShowLabel(i);
+            }
         }
 
-        yield return new WaitForSeconds(0.3f);
-        FinishReveal(spawned, results);
+        if (continueButton != null) continueButton.gameObject.SetActive(true);
+
+        if (autoLoadNextScene && !string.IsNullOrEmpty(nextSceneName))
+        {
+            yield return new WaitForSeconds(delayBeforeNextScene);
+            LoadNextScene();
+        }
+    }
+
+    private void PlayPositionAnimation(GameObject go, int slotIndex)
+    {
+        if (go == null || rankStates == null || slotIndex >= rankStates.Length) return;
+        PodiumCharacterUtil.PlayState(go, rankStates[slotIndex]);
     }
 
     private IEnumerator PopIn(GameObject go)
@@ -242,58 +180,44 @@ public class Podium : MonoBehaviour
         go.transform.localScale = target;
     }
 
-    private void FinishReveal(List<GameObject> spawned, List<PlayerResult> results)
+    // ---------- Label ----------
+
+    private void HideAllLabels()
     {
-        for (int i = 0; i < spawned.Count; i++)
-        {
-            if (spawned[i] == null) continue;
-            spawned[i].SetActive(true);
-
-            Animator anim = spawned[i].GetComponentInChildren<Animator>();
-            string trigger = results[i].rank == 1 ? winnerTrigger : loserTrigger;
-            SetTriggerSafe(anim, trigger);
-        }
-
-        if (slotLabels != null)
-            for (int i = 0; i < spawned.Count && i < slotLabels.Length; i++)
-                if (slotLabels[i] != null) slotLabels[i].gameObject.SetActive(true);
-
-        ShowButton();
+        if (slotLabels == null) return;
+        foreach (TMP_Text t in slotLabels)
+            if (t != null) t.gameObject.SetActive(false);
     }
 
-    private static void SetTriggerSafe(Animator anim, string triggerName)
+    private void SetLabel(int slotIndex, PlayerResult r)
     {
-        if (anim == null || string.IsNullOrEmpty(triggerName)) return;
+        if (slotLabels == null || slotIndex >= slotLabels.Length || slotLabels[slotIndex] == null) return;
 
-        foreach (AnimatorControllerParameter p in anim.parameters)
-        {
-            if (p.name == triggerName && p.type == AnimatorControllerParameterType.Trigger)
-            {
-                anim.SetTrigger(triggerName);
-                return;
-            }
-        }
-        Debug.LogWarning("[Podium] Parameter Trigger '" + triggerName + "' tidak ada di Animator.");
+        slotLabels[slotIndex].text = r.playerName + "\n" + r.score;
+        slotLabels[slotIndex].gameObject.SetActive(false); // dimunculkan lewat ShowLabel
     }
 
-    private void ShowButton()
+    private void ShowLabel(int slotIndex)
     {
-        if (backToMenuButton != null) backToMenuButton.gameObject.SetActive(true);
+        if (slotLabels == null || slotIndex >= slotLabels.Length || slotLabels[slotIndex] == null) return;
+        slotLabels[slotIndex].gameObject.SetActive(true);
     }
 
-    // ---------- Tombol ----------
+    // ---------- Pindah scene ----------
 
-    public void BackToMenu()
+    public void LoadNextScene()
     {
-        if (string.IsNullOrEmpty(menuSceneName))
+        if (isLoading) return;
+
+        if (string.IsNullOrEmpty(nextSceneName))
         {
-            Debug.LogWarning("Nama scene menu belum diisi di Inspector Podium!");
+            Debug.LogWarning("[Podium] Next Scene Name belum diisi di Inspector!");
             return;
         }
 
-        ScoreBridge.Clear();
+        isLoading = true;
         Time.timeScale = 1f;
-        SceneManager.LoadScene(menuSceneName);
+        SceneManager.LoadScene(nextSceneName); // ScoreBridge tetap utuh, dipakai scene Dipecat
     }
 
     // ---------- Testing ----------
