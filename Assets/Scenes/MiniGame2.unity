@@ -6550,7 +6550,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7208fbbadc3f10d4cb3ccb61149d6733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTimer
-  timeRemaining: 10
+  timeRemaining: 12
   timerIsRunning: 0
   timeText: {fileID: 1537081928}
   timeUpPanel: {fileID: 1473050456}
