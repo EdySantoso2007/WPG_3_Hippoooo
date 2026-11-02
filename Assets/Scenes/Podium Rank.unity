@@ -501,7 +501,7 @@ Transform:
   m_GameObject: {fileID: 301658474}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.637, y: -1.363, z: -4.511}
+  m_LocalPosition: {x: 0.637, y: -1.272, z: -4.511}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -684,9 +684,9 @@ MonoBehaviour:
   useReveal: 1
   revealInterval: 0.5
   popDuration: 0.4
-  nextSceneName: 
-  autoLoadNextScene: 0
-  delayBeforeNextScene: 5
+  nextSceneName: Fired Cutscene
+  autoLoadNextScene: 1
+  delayBeforeNextScene: 8
   continueButton: {fileID: 0}
   useTestDataIfEmpty: 1
   testPlayerCount: 4
@@ -908,7 +908,7 @@ Transform:
   m_GameObject: {fileID: 1425437632}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.5174799, y: 0.358, z: -5.6900005}
+  m_LocalPosition: {x: 0.5174799, y: 0.414, z: -5.6900005}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1216,7 +1216,7 @@ Transform:
   m_GameObject: {fileID: 2089993861}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.5174799, y: -0.643, z: -6.91}
+  m_LocalPosition: {x: 0.5174799, y: -0.611, z: -6.91}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
