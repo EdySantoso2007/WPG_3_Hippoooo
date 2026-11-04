@@ -8,6 +8,10 @@ using UnityEngine.SceneManagement;
 /// Port dari script cutscene di Godot (Cutscene.tscn / cutscene_shot.gd / worker_hippo.gd).
 /// Menjalankan urutan shot kamera, animasi boss, dan reaksi worker.
 /// target_worker_id di Godot -> di sini WorkerTarget.LastPlace = hippo juara terakhir di Podium (ScoreBridge.Results, elemen terakhir).
+///
+/// LOOP: setelah cutscene, hippo yang dipecat ditandai eliminated di RoomBridge.
+/// Kalau pemain yang tersisa >= 2 -> kembali ke minigame. Kalau tersisa 1 -> loop selesai di sini.
+/// Perpindahan scene memakai transisi iris (lingkaran menutup) kalau field Iris diisi.
 /// </summary>
 public class FiredSceneController : MonoBehaviour
 {
@@ -33,12 +37,25 @@ public class FiredSceneController : MonoBehaviour
     [Tooltip("Posisi awal kamera (Godot: default_marker / ShotWide).")]
     public Transform defaultMarker;
 
-    [Header("Setelah Cutscene Selesai (opsional)")]
+    [Header("Loop Minigame")]
+    [Tooltip("Scene minigame yang dimuat lagi selama pemain yang tersisa masih 2 atau lebih.")]
+    public string minigameSceneName = "MainScenery";
+    [Tooltip("Minimal pemain tersisa agar loop lanjut. Kalau pemain tersisa kurang dari ini, loop selesai.")]
+    public int minPlayersToContinue = 2;
+
+    [Header("Setelah Loop Selesai (tersisa 1 pemain)")]
+    [Tooltip("Scene yang dimuat setelah loop selesai (mis. MainMenu). Kosong = tetap di scene ini.")]
     public string nextSceneName = "";
     public float delayBeforeNextScene = 1f;
     [Tooltip("Kalau pemain hanya 1, lewati cutscene dan langsung ke Fallback Scene Name.")]
     public bool skipIfSinglePlayer = true;
     public string fallbackSceneName = "MainMenu";
+
+    [Header("Transisi Iris (Dipecat -> Minigame / Scene Berikutnya)")]
+    [Tooltip("Drag objek IrisTransition dari scene ini. Kosong = langsung pindah scene tanpa transisi.")]
+    public IrisTransition iris;
+    [Tooltip("Lama lingkaran menutup sebelum scene berikutnya dimuat (detik).")]
+    public float irisCloseDuration = 0.8f;
 
     [Header("Testing")]
     [Tooltip("Tekan Space untuk mengulang cutscene (seperti di Godot).")]
@@ -123,7 +140,7 @@ public class FiredSceneController : MonoBehaviour
             if (playerTextures != null && w.playerIndex < playerTextures.Length)
                 w.ApplyTexture(playerTextures[w.playerIndex]);
 
-            // Tampilkan semua hippo pemain yang ikut main.
+            // Tampilkan semua hippo pemain yang ikut main di ronde ini.
             // Yang tidak dipecat tidak dapat trigger, jadi diam di state default (FallHold).
             w.gameObject.SetActive(IsPlaying(w.playerIndex));
         }
@@ -194,13 +211,56 @@ public class FiredSceneController : MonoBehaviour
         }
 
         Debug.Log("Cutscene sequence finished!");
-        isPlaying = false;
 
-        if (!string.IsNullOrEmpty(nextSceneName))
+        // Putuskan scene berikutnya: lanjut minigame, atau loop selesai
+        string target = DecideNextScene();
+
+        if (!string.IsNullOrEmpty(target))
         {
             yield return new WaitForSeconds(delayBeforeNextScene);
-            SceneManager.LoadScene(nextSceneName);
+
+            // Iris menutup (layar jadi hitam) -> baru pindah scene
+            if (iris != null)
+                yield return iris.Close(irisCloseDuration);
+
+            SceneManager.LoadScene(target);
+            yield break; // scene sedang berpindah, isPlaying sengaja tidak di-reset (cegah replay Space)
         }
+
+        isPlaying = false;
+    }
+
+    // Tandai pemain yang dipecat, lalu tentukan scene berikutnya.
+    // Return "" kalau tidak ada scene yang perlu dimuat (tetap di scene ini).
+    string DecideNextScene()
+    {
+        // Scene dijalankan langsung (testing, tanpa lewat Room/minigame): perilaku lama
+        bool inLoop = ScoreBridge.HasResults && RoomBridge.JoinedPlayers.Count > 0;
+        if (!inLoop) return nextSceneName;
+
+        RoomBridge.Eliminate(loserIndex);
+        int remaining = RoomBridge.ActiveCount;
+        Debug.Log($"Pemain {loserIndex} dipecat. Sisa pemain: {remaining}");
+
+        // Masih ada cukup pemain -> main lagi tanpa yang dipecat
+        if (remaining >= minPlayersToContinue)
+        {
+            if (string.IsNullOrEmpty(minigameSceneName))
+            {
+                Debug.LogWarning("[FiredScene] Minigame Scene Name belum diisi di Inspector!");
+                return "";
+            }
+            return minigameSceneName;
+        }
+
+        // Tersisa 1 pemain -> loop selesai di cutscene ini
+        Debug.Log("Loop selesai: tersisa " + remaining + " pemain.");
+        if (!string.IsNullOrEmpty(nextSceneName))
+        {
+            RoomBridge.ResetRoom();
+            ScoreBridge.Clear();
+        }
+        return nextSceneName;
     }
 
     WorkerHippo ChooseWorker(CutsceneShot shot)

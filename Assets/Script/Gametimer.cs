@@ -32,6 +32,11 @@ public class GameTimer : MonoBehaviour
     public string[] storageNames;         // (Opsional) Nama tiap zona, misal "Player 1"
     public TMP_Text winnerText;           // (Opsional) Teks pemenang
 
+    [Header("Pemain Tidak Aktif (belum join / sudah dipecat)")]
+    [Tooltip("Centang: Drop Zone milik slot yang tidak aktif dimatikan (beserta teks skornya), " +
+             "supaya pemain lain tidak bisa menaruh / mencuri kotak di sana.")]
+    public bool disableInactiveStorages = true;
+
     [Header("Nama Scene")]
     public string podiumSceneName = "Podium";
 
@@ -48,8 +53,33 @@ public class GameTimer : MonoBehaviour
             timeUpPanel.SetActive(false);
         }
 
+        SetupInactiveStorages();
+
         // Jalankan timer SETELAH hitungan 3,2,1 dan teks GO! selesai
         StartCoroutine(StartAfterIntro());
+    }
+
+    // Slot ini diisi pemain yang ikut ronde ini?
+    // Kalau tidak lewat Room/Lobby (testing langsung di scene ini), semua slot dianggap aktif.
+    bool IsSlotActive(int index)
+    {
+        if (RoomBridge.JoinedPlayers.Count == 0) return true;
+        return RoomBridge.IsSlotActive(index);
+    }
+
+    void SetupInactiveStorages()
+    {
+        if (!disableInactiveStorages || storages == null) return;
+
+        for (int i = 0; i < storages.Length; i++)
+        {
+            if (storages[i] == null || IsSlotActive(i)) continue;
+
+            if (storages[i].scoreText != null)
+                storages[i].scoreText.gameObject.SetActive(false);
+
+            storages[i].gameObject.SetActive(false);
+        }
     }
 
     IEnumerator StartAfterIntro()
@@ -143,20 +173,9 @@ public class GameTimer : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
-    // Jumlah pemain yang benar-benar ikut main.
-    // Kalau tidak lewat Room/Lobby (testing langsung di scene ini), semua Drop Zone dianggap ikut.
-    int GetActivePlayerCount()
-    {
-        int max = storages != null ? storages.Length : 0;
-        int joined = RoomBridge.JoinedPlayers.Count;
-        return joined > 0 ? Mathf.Min(joined, max) : max;
-    }
-
     void ShowFinalScore()
     {
         if (storages == null || finalScoreTexts == null) return;
-
-        int activeCount = GetActivePlayerCount();
 
         int highScore = -1;
         int winnerIndex = -1;
@@ -168,8 +187,8 @@ public class GameTimer : MonoBehaviour
         {
             if (finalScoreTexts[i] == null) continue;
 
-            // Sembunyikan teks untuk Drop Zone tanpa pemain
-            if (i >= activeCount || storages[i] == null)
+            // Sembunyikan teks untuk Drop Zone tanpa pemain aktif (belum join / sudah dipecat)
+            if (i >= storages.Length || storages[i] == null || !IsSlotActive(i))
             {
                 finalScoreTexts[i].gameObject.SetActive(false);
                 continue;
