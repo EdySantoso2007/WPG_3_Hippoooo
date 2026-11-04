@@ -10027,7 +10027,7 @@ MonoBehaviour:
   dashDuration: 0.2
   dashCooldown: 3
   bumpForce: 5
-  playerKnockback: 7
+  playerKnockback: 5
   stunDuration: 2
   stunFallsBackward: 1
   dashSfx: {fileID: 8300000, guid: 2f1517876caabce40985254e31c97486, type: 3}
