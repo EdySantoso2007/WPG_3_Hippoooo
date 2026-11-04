@@ -94,13 +94,17 @@ public class RoomManager : MonoBehaviour
             ActivateRoom();
         }
 
-        // A = Start (hanya jika syarat minimal player sudah terpenuhi)
-        var gamepad = Gamepad.current;
-        if (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
+        // A = Start. HANYA diterima dari gamepad yang SUDAH join room,
+        // dan hanya jika syarat minimal player sudah terpenuhi.
+        if (RoomBridge.JoinedPlayers.Count >= minPlayersToStart)
         {
-            if (RoomBridge.JoinedPlayers.Count >= minPlayersToStart)
+            foreach (Gamepad pad in Gamepad.all)
             {
-                StartGame();
+                if (pad.buttonSouth.wasPressedThisFrame && RoomBridge.IsDeviceJoined(pad))
+                {
+                    StartGame();
+                    break;
+                }
             }
         }
     }
@@ -121,6 +125,14 @@ public class RoomManager : MonoBehaviour
             return;
         }
 
+        // Tolak kalau tidak ada device sama sekali yang terpasang
+        if (playerInput.devices.Count == 0)
+        {
+            Debug.Log("Join tanpa device, diabaikan.");
+            Destroy(playerInput.gameObject);
+            return;
+        }
+
         // Tolak kalau device ini (keyboard/gamepad yang sama) sudah pernah join
         if (IsDeviceAlreadyJoined(playerInput))
         {
@@ -137,13 +149,16 @@ public class RoomManager : MonoBehaviour
         }
 
         int index = RoomBridge.JoinedPlayers.Count;
+        string scheme = playerInput.currentControlScheme;
 
         // Simpan HANYA data control scheme & device fisiknya, bukan gameobject-nya
         RoomBridge.JoinedPlayers.Add(new JoinedPlayerData
         {
-            controlScheme = playerInput.currentControlScheme,
+            controlScheme = scheme,
             devices = playerInput.devices.ToArray()
         });
+
+        Debug.Log($"Device join ke room, urutan ke-{index + 1}, control scheme: {scheme}");
 
         // Placeholder ini tugasnya sudah selesai (cuma buat deteksi join),
         // langsung hancurkan supaya tidak ada apapun yang muncul di layar
@@ -160,26 +175,16 @@ public class RoomManager : MonoBehaviour
         {
             startButton.interactable = true;
         }
-
-        Debug.Log($"Device join ke room, urutan ke-{index + 1}, control scheme: {playerInput.currentControlScheme}");
     }
 
     // Cek apakah salah satu device fisik di playerInput ini sudah tercatat
     // sebelumnya di RoomBridge (dari player lain yang sudah join duluan)
     private bool IsDeviceAlreadyJoined(PlayerInput playerInput)
     {
-        foreach (JoinedPlayerData data in RoomBridge.JoinedPlayers)
+        foreach (InputDevice newDevice in playerInput.devices)
         {
-            foreach (InputDevice newDevice in playerInput.devices)
-            {
-                foreach (InputDevice existingDevice in data.devices)
-                {
-                    if (newDevice.deviceId == existingDevice.deviceId)
-                    {
-                        return true;
-                    }
-                }
-            }
+            if (RoomBridge.IsDeviceJoined(newDevice))
+                return true;
         }
         return false;
     }
@@ -187,6 +192,7 @@ public class RoomManager : MonoBehaviour
     // Dipanggil dari tombol START (sudah di-wire otomatis lewat AddListener di Awake)
     private void StartGame()
     {
+        if (gameStarting) return;
         if (RoomBridge.JoinedPlayers.Count < minPlayersToStart) return;
 
         gameStarting = true;

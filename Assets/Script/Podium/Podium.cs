@@ -47,6 +47,12 @@ public class Podium : MonoBehaviour
     [Tooltip("(Opsional) Tombol untuk melewati podium. Muncul setelah semua karakter tampil.")]
     public Button continueButton;
 
+    [Header("Transisi Iris (Podium -> Dipecat)")]
+    [Tooltip("Drag objek IrisTransition dari scene Podium ini. Kosong = langsung pindah scene tanpa transisi.")]
+    public IrisTransition iris;
+    [Tooltip("Lama lingkaran menutup sebelum scene Dipecat dimuat (detik).")]
+    public float irisCloseDuration = 0.8f;
+
     [Header("Testing")]
     [Tooltip("Kalau scene Podium dijalankan langsung (tanpa lewat minigame), pakai skor acak.")]
     public bool useTestDataIfEmpty = true;
@@ -206,6 +212,7 @@ public class Podium : MonoBehaviour
 
     // ---------- Pindah scene ----------
 
+    // Dipanggil tombol Continue atau auto-load. Aman dipanggil berkali-kali (isLoading).
     public void LoadNextScene()
     {
         if (isLoading) return;
@@ -217,6 +224,18 @@ public class Podium : MonoBehaviour
         }
 
         isLoading = true;
+        StartCoroutine(LoadNextSceneRoutine());
+    }
+
+    // Iris menutup (layar jadi hitam) -> baru scene Dipecat dimuat.
+    private IEnumerator LoadNextSceneRoutine()
+    {
+        // Cegah klik ganda selama transisi
+        if (continueButton != null) continueButton.interactable = false;
+
+        if (iris != null)
+            yield return iris.Close(irisCloseDuration);
+
         Time.timeScale = 1f;
         SceneManager.LoadScene(nextSceneName); // ScoreBridge tetap utuh, dipakai scene Dipecat
     }

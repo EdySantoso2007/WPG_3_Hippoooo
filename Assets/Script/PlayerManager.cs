@@ -22,15 +22,20 @@ public class PlayerManager : MonoBehaviour
     private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
     private static readonly int ColorId = Shader.PropertyToID("_Color");
 
+    // Hanya dipakai untuk jalur testing (PlayerInputManager langsung di scene ini)
     private int playersJoined = 0;
 
     private void Start()
     {
         // Spawn player asli sesuai data device yang sudah dicatat waktu join
-        // di scene Room/Lobby (lewat RoomManager), urut sesuai urutan join.
-        foreach (JoinedPlayerData data in RoomBridge.JoinedPlayers)
+        // di scene Room/Lobby (lewat RoomManager). Slot = urutan join = warna.
+        // Pemain yang sudah DIPECAT dilewati, tapi slot (spawn point & warna) pemain lain tidak bergeser.
+        for (int slot = 0; slot < RoomBridge.JoinedPlayers.Count; slot++)
         {
-            SpawnPlayer(data);
+            JoinedPlayerData data = RoomBridge.JoinedPlayers[slot];
+            if (data.eliminated) continue;
+
+            SpawnPlayer(data, slot);
         }
     }
 
@@ -38,40 +43,77 @@ public class PlayerManager : MonoBehaviour
     // ini juga (mis. testing tanpa lewat Room/Lobby)
     public void OnPlayerJoined(PlayerInput playerInput)
     {
-        SetupPlayer(playerInput);
+        SetupPlayer(playerInput, playersJoined);
+        playersJoined++;
     }
 
-    private void SpawnPlayer(JoinedPlayerData data)
+    private void SpawnPlayer(JoinedPlayerData data, int slot)
     {
         // Instantiate prefab asli, dipasangkan ke device fisik yang SAMA
-        // dengan waktu player itu join di room (biar controllernya nyambung
-        // ke player yang benar, bukan device lain)
+        // dengan waktu player itu join di room
         PlayerInput playerInput = PlayerInput.Instantiate(
             playerPrefab,
             controlScheme: data.controlScheme,
             pairWithDevices: data.devices
         );
 
-        SetupPlayer(playerInput);
+        // Kunci supaya HANYA device yang join room yang mengontrol player ini
+        LockToJoinedDevices(playerInput, data.devices);
+
+        SetupPlayer(playerInput, slot);
     }
 
-    private void SetupPlayer(PlayerInput playerInput)
+    // Pastikan player ini hanya dikontrol device miliknya:
+    // 1. Matikan auto-switch control scheme
+    // 2. Lepas device apapun yang terpasang tapi bukan milik player ini
+    private void LockToJoinedDevices(PlayerInput playerInput, InputDevice[] allowedDevices)
     {
-        if (playersJoined >= spawnPoints.Count || playersJoined >= playerTextures.Length)
+        playerInput.neverAutoSwitchControlSchemes = true;
+
+        var user = playerInput.user;
+
+        InputDevice[] paired = user.pairedDevices.ToArray();
+        foreach (InputDevice device in paired)
+        {
+            if (!ContainsDevice(allowedDevices, device))
+            {
+                Debug.Log($"[PlayerManager] Melepas device '{device.displayName}' yang tidak join room.");
+                user.UnpairDevice(device);
+            }
+        }
+
+        if (user.pairedDevices.Count == 0)
+        {
+            Debug.LogWarning("[PlayerManager] Player ini tidak punya device terpasang " +
+                             "(device mungkin sudah dicabut sebelum game mulai).");
+        }
+    }
+
+    private static bool ContainsDevice(InputDevice[] devices, InputDevice target)
+    {
+        if (devices == null || target == null) return false;
+
+        foreach (InputDevice d in devices)
+        {
+            if (d != null && d.deviceId == target.deviceId) return true;
+        }
+        return false;
+    }
+
+    private void SetupPlayer(PlayerInput playerInput, int slot)
+    {
+        if (slot >= spawnPoints.Count || slot >= playerTextures.Length)
         {
             Debug.Log("Maksimal player sudah tercapai, spawnPoints kurang, atau Player Textures kurang!");
             Destroy(playerInput.gameObject);
             return;
         }
 
-        // 1. Pindahkan player ke titik spawn sesuai urutan
-        playerInput.transform.position = spawnPoints[playersJoined].position;
+        // 1. Pindahkan player ke titik spawn sesuai slot
+        playerInput.transform.position = spawnPoints[slot].position;
 
-        // 2. Ganti texture (UV) sesuai urutan player
-        ApplyTexture(playerInput.gameObject, playerTextures[playersJoined]);
-
-        // Tambah jumlah player yang sudah masuk
-        playersJoined++;
+        // 2. Ganti texture (UV) sesuai slot
+        ApplyTexture(playerInput.gameObject, playerTextures[slot]);
     }
 
     private void ApplyTexture(GameObject player, Texture2D texture)
@@ -84,7 +126,6 @@ public class PlayerManager : MonoBehaviour
 
         // Hanya ubah Renderer milik model hippo (anak dari Animator),
         // supaya Renderer lain (mis. kapsul lama yang dimatikan) tidak ikut.
-        // Kalau Animator tidak ketemu, pakai semua Renderer di player.
         Animator animator = player.GetComponentInChildren<Animator>();
         Transform modelRoot = animator != null ? animator.transform : player.transform;
 
@@ -97,8 +138,7 @@ public class PlayerManager : MonoBehaviour
 
         foreach (Renderer r in renderers)
         {
-            // r.materials membuat salinan material khusus renderer ini,
-            // jadi texture satu player tidak ikut mengubah player lain.
+            // r.materials membuat salinan material khusus renderer ini
             foreach (Material m in r.materials)
             {
                 if (m.HasProperty(BaseMapId))

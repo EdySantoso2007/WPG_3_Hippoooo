@@ -1398,10 +1398,14 @@ MonoBehaviour:
   bossAnimator: {fileID: 500903291}
   cam: {fileID: 851536645}
   defaultMarker: {fileID: 1116837402}
+  minigameSceneName: MiniGame2
+  minPlayersToContinue: 2
   nextSceneName: 
   delayBeforeNextScene: 1
   skipIfSinglePlayer: 1
   fallbackSceneName: Menu Proto
+  iris: {fileID: 1803350159}
+  irisCloseDuration: 0.8
   replayWithSpace: 1
 --- !u!4 &1680681129
 Transform:
@@ -1418,12 +1422,141 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1803350158
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 951438293009372817, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_Name
+      value: IrisCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 951438293009372817, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5663359438724656096, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7817628798487686012, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_UiScaleMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7817628798487686012, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_ReferenceResolution.x
+      value: 1920
+      objectReference: {fileID: 0}
+    - target: {fileID: 7817628798487686012, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: m_ReferenceResolution.y
+      value: 1080
+      objectReference: {fileID: 0}
+    - target: {fileID: 8083454738814059827, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+      propertyPath: openOnStart
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+--- !u!114 &1803350159 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8083454738814059827, guid: 8c09d5413273b584cb5a5da028fa206c, type: 3}
+  m_PrefabInstance: {fileID: 1803350158}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 61a72178d1211c64fa06c8be0ecddb26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IrisTransition
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 851536646}
   - {fileID: 1208883078}
+  - {fileID: 1803350158}
   - {fileID: 769450492}
   - {fileID: 500903288}
   - {fileID: 829050471}

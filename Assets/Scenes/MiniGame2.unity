@@ -6603,7 +6603,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7208fbbadc3f10d4cb3ccb61149d6733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTimer
-  timeRemaining: 180
+  timeRemaining: 30
   timerIsRunning: 0
   timeText: {fileID: 1537081928}
   timeUpPanel: {fileID: 1473050456}
@@ -6623,6 +6623,7 @@ MonoBehaviour:
   - {fileID: 1918974209}
   storageNames: []
   winnerText: {fileID: 0}
+  disableInactiveStorages: 1
   podiumSceneName: Podium Rank
 --- !u!4 &1780249382
 Transform:
