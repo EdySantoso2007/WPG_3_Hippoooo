@@ -26,7 +26,7 @@ public class Podium : MonoBehaviour
 
     [Header("Animasi per Posisi")]
     [Tooltip("Nama STATE di Animator Controller untuk tiap posisi (urutan sama dengan Slots). " +
-             "Dimainkan begitu karakter muncul.")]
+             "Dimainkan bersamaan dengan efek pop saat karakter muncul.")]
     public string[] rankStates = { "Rank1", "Rank2", "Rank3", "Rank4" };
 
     [Header("Label Teks (opsional, urutan sama dengan Slots)")]
@@ -124,11 +124,9 @@ public class Podium : MonoBehaviour
             {
                 yield return new WaitForSeconds(revealInterval);
 
+                // Animasi posisi dimainkan di dalam PopIn, bersamaan dengan efek pop
                 if (spawned[i] != null)
-                {
-                    yield return StartCoroutine(PopIn(spawned[i]));
-                    PlayPositionAnimation(spawned[i], i);
-                }
+                    yield return StartCoroutine(PopIn(spawned[i], i));
 
                 ShowLabel(i);
             }
@@ -157,11 +155,14 @@ public class Podium : MonoBehaviour
         PodiumCharacterUtil.PlayState(go, rankStates[slotIndex]);
     }
 
-    private IEnumerator PopIn(GameObject go)
+    private IEnumerator PopIn(GameObject go, int slotIndex)
     {
         Vector3 target = go.transform.localScale;
         go.transform.localScale = Vector3.zero;
         go.SetActive(true);
+
+        // Mulai animasi posisi SEKARANG (setelah aktif), jadi jalan bersamaan dengan pop
+        PlayPositionAnimation(go, slotIndex);
 
         float t = 0f;
         while (t < popDuration)
