@@ -11,14 +11,40 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     public List<Transform> targets = new List<Transform>();
 
     [Header("Pengaturan Gerak (Posisi)")]
+    [Tooltip("Hanya dipakai sebagai ARAH kamera dari pemain. Jaraknya diatur oleh Min/Max Cam Distance.")]
     public Vector3 offset = new Vector3(0, 10, -10);
     public float smoothTime = 0.5f;
 
-    [Header("Pengaturan Zoom (Field of View)")]
-    public float minZoom = 40f;
-    public float maxZoom = 60f;
-    public float minDistanceBeforeZoom = 15f;
-    public float zoomLimiter = 20f;
+    [Header("Pengaturan Zoom (Jarak Kamera)")]
+    [Tooltip("FOV tetap selama game berjalan.")]
+    public float fixedFOV = 45f;
+    [Tooltip("Jarak kamera saat pemain berdekatan (zoom in).")]
+    public float minCamDistance = 12f;
+    [Tooltip("Jarak kamera saat pemain berjauhan (zoom out). Naikkan angka ini kalau zoom out kurang tinggi.")]
+    public float maxCamDistance = 30f;
+    [Tooltip("Jarak antar pemain (di lantai) di mana kamera masih paling dekat.")]
+    public float minPlayerSpread = 4f;
+    [Tooltip("Jarak antar pemain (di lantai) di mana kamera sudah paling jauh.")]
+    public float maxPlayerSpread = 25f;
+    [Tooltip("Kecepatan zoom normal. Makin besar = makin cepat.")]
+    public float zoomSpeed = 3f;
+    public enum ZoomMode { PlayerSpread, Zones }
+
+    [Header("Mode Zoom")]
+    [Tooltip("PlayerSpread = zoom berdasarkan jarak antar pemain. Zones = zoom berdasarkan zona (CameraZone) tempat pemain berada.")]
+    public ZoomMode zoomMode = ZoomMode.Zones;
+
+    [Header("Mode Zones: Jarak Kamera")]
+    [Tooltip("Jarak kamera di zona Near.")]
+    public float nearCamDistance = 12f;
+    [Tooltip("Jarak kamera di zona Far (prioritas lebih tinggi).")]
+    public float farCamDistance = 30f;
+    [Tooltip("Kalau pemain tidak ada di zona manapun: centang = pakai kamera jauh, hilangkan = pakai kamera dekat.")]
+    public bool outsideZonesUseFar = false;
+
+    [Tooltip("Hanya untuk melihat nilai saat Play Mode (membantu mengatur Min/Max Player Spread).")]
+    public float debugCurrentSpread;
+    public float debugCurrentDistance;
 
     [Header("Pengaturan Efek Getar Halus (Continuous Shake)")]
     public bool enableContinuousShake = true;
@@ -28,6 +54,7 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     public float continuousShakeSpeed = 2f;
 
     [Header("Batas Map (agar luar map tidak terlihat)")]
+    [Tooltip("Kalau zoom out terasa 'tertahan', coba matikan ini untuk tes. Kalau area terlihat lebih besar dari map, kamera dikunci di tengah map.")]
     public bool useMapBounds = true;
     [Tooltip("Pojok kiri-bawah lantai map (X, Z) dalam koordinat dunia")]
     public Vector2 mapMin = new Vector2(-20f, -10f);
@@ -36,12 +63,10 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     [Tooltip("Tinggi lantai map (Y)")]
     public float groundY = 0f;
     [Header("Margin Per Sisi")]
-    [Tooltip("Positif = kamera berhenti lebih awal (luar map makin aman). Negatif = kamera boleh melewati batas map, berguna agar pemain di pojok tidak terpotong tepi layar / UI.")]
     public float marginLeft = 0.5f;
     public float marginRight = 0.5f;
-    [Tooltip("Sisi atas layar (bagian belakang map)")]
     public float marginTop = 0.5f;
-    [Tooltip("Sisi bawah layar. Isi negatif (misal -3) jika bawah layar tertutup UI skor")]
+    [Tooltip("Isi negatif (misal -3) jika bawah layar tertutup UI skor")]
     public float marginBottom = 0.5f;
 
     // ------------------------------------------------------------
@@ -49,47 +74,37 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     // ------------------------------------------------------------
     [Header("Intro Hitungan (sebelum zoom ke pemain)")]
     public bool useIntro = true;
-    [Tooltip("Titik yang dilihat kamera selama hitungan. Kosongkan = tengah map (dari Map Min / Map Max).")]
+    [Tooltip("Titik yang dilihat kamera selama hitungan. Kosongkan = tengah map.")]
     public Transform introFocus;
-    [Tooltip("Field of View selama hitungan. Makin besar = makin jauh / luas.")]
-    public float introFOV = 70f;
-    [Tooltip("Angka awal hitungan (3 = 3,2,1 atau 1,2,3 tergantung opsi di bawah)")]
+    [Tooltip("Field of View selama hitungan.")]
+    public float introFOV = 60f;
+    [Tooltip("Jarak kamera dari titik fokus selama hitungan. Makin besar = makin luas.")]
+    public float introDistance = 28f;
     public int countdownFrom = 3;
     [Tooltip("Centang: 3,2,1. Hilangkan centang: 1,2,3.")]
     public bool countDownwards = true;
     public float secondsPerCount = 1f;
-    [Tooltip("Teks setelah hitungan selesai. Kosongkan kalau tidak mau.")]
     public string goText = "GO!";
-    [Tooltip("Lama teks GO! tampil. Selama ini kamera MASIH diam, baru bergerak ke pemain setelahnya.")]
     public float goDuration = 0.8f;
-    [Tooltip("Ukuran awal teks GO! (efek menghantam: besar lalu mengecil ke ukuran normal).")]
     public float goStartScale = 2.5f;
-    [Tooltip("Teks TextMeshPro (di Canvas) untuk menampilkan angka hitungan. Boleh kosong.")]
     public TextMeshProUGUI countdownText;
-    [Tooltip("Centang: game dijeda (Time.timeScale = 0) selama hitungan, lalu jalan lagi setelah selesai.")]
     public bool freezeGameDuringCountdown = true;
 
     [Header("Transisi Zoom ke Pemain (setelah hitungan)")]
-    [Tooltip("Makin besar = kamera bergerak ke pemain makin pelan.")]
     public float transitionSmoothTime = 1.2f;
-    [Tooltip("Kecepatan zoom FOV selama transisi (normal = 3).")]
     public float transitionZoomSpeed = 2f;
-    [Tooltip("Berapa detik pengaturan transisi di atas dipakai sebelum kembali normal.")]
     public float transitionDuration = 1.5f;
 
-    [Tooltip("Dipanggil tepat setelah hitungan selesai (misalnya untuk memulai timer game).")]
     public UnityEvent onCountdownFinished;
 
-    // Script lain bisa mengecek ini (misalnya agar pemain tidak bisa gerak saat hitungan)
     public bool IsIntroPlaying { get; private set; }
 
     /// <summary>
-    /// True selama hitungan sampai teks GO! selesai. Dipakai PlayerMovement / PlayerInteraction
-    /// untuk mengunci pemain. Tidak bergantung pada Time.timeScale, jadi tetap aman walau script lain mengubahnya.
+    /// True selama hitungan sampai teks GO! selesai. Dipakai script pemain untuk mengunci input.
     /// </summary>
     public static bool InputLocked { get; private set; }
 
-    // --- VARIABEL TRIGGER SHAKE ---
+    // --- VARIABEL SHAKE ---
     private float shakeTimeRemaining;
     private float shakePower;
     private float shakeFadeTime;
@@ -97,6 +112,7 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     private Vector3 currentSmoothPosition;
     private Vector3 velocity;
     private Camera cam;
+    private float currentCamDistance;
 
     // --- VARIABEL INTRO ---
     private Vector3 introPosition;
@@ -105,14 +121,11 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     private float savedTimeScale = 1f;
     private Coroutine introRoutine;
 
-    // Frame yang lag (misalnya saat scene baru selesai loading) dihitung maksimal segini,
-    // supaya satu frame berat tidak melompati angka hitungan.
     private const float MaxFrameTime = 0.05f;
     private const int WarmupFrames = 5;
 
     void Awake()
     {
-        // Kunci sedini mungkin, sebelum pemain sempat bergerak
         InputLocked = useIntro;
     }
 
@@ -120,8 +133,17 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     {
         cam = GetComponent<Camera>();
         currentSmoothPosition = transform.position;
+        currentCamDistance = minCamDistance;
 
-        if (useIntro) PlayIntro();
+        if (useIntro)
+        {
+            PlayIntro();
+        }
+        else
+        {
+            // Langsung mulai dengan FOV normal
+            cam.fieldOfView = fixedFOV;
+        }
     }
 
     void OnDisable()
@@ -138,7 +160,6 @@ public class DynamicMultiplayerCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        // Selama hitungan: kamera diam di sudut pandang awal (jauh / luas)
         if (IsIntroPlaying)
         {
             HoldIntroView();
@@ -147,8 +168,9 @@ public class DynamicMultiplayerCamera : MonoBehaviour
 
         if (targets == null || targets.Count == 0) return;
 
-        Move();
+        // Urutan penting: hitung zoom dulu, baru gerak
         Zoom();
+        Move();
 
         if (transitionTimer > 0f) transitionTimer -= Time.deltaTime;
     }
@@ -157,7 +179,6 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     //  INTRO
     // ------------------------------------------------------------
 
-    // Bisa dipanggil lagi dari script lain untuk mengulang hitungan (misalnya saat ronde baru)
     public void PlayIntro()
     {
         if (cam == null) cam = GetComponent<Camera>();
@@ -169,7 +190,7 @@ public class DynamicMultiplayerCamera : MonoBehaviour
             ? introFocus.position
             : new Vector3((mapMin.x + mapMax.x) * 0.5f, groundY, (mapMin.y + mapMax.y) * 0.5f);
 
-        introPosition = focus + offset;
+        introPosition = focus + offset.normalized * introDistance;
         introRoutine = StartCoroutine(IntroRoutine());
     }
 
@@ -179,6 +200,9 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         currentSmoothPosition = introPosition;
         velocity = Vector3.zero;
         cam.fieldOfView = introFOV;
+
+        // Supaya setelah intro, zoom mulai dari jarak intro lalu mendekat dengan mulus
+        currentCamDistance = introDistance;
     }
 
     IEnumerator IntroRoutine()
@@ -193,24 +217,20 @@ public class DynamicMultiplayerCamera : MonoBehaviour
             timeFrozenByIntro = true;
         }
 
-        // Beri waktu beberapa frame setelah scene selesai dimuat (frame awal biasanya berat / lag)
         for (int f = 0; f < WarmupFrames; f++)
             yield return null;
 
-        // Hitungan angka (pakai waktu real, supaya tetap jalan walau Time.timeScale = 0)
         for (int i = 0; i < countdownFrom; i++)
         {
             int number = countDownwards ? countdownFrom - i : i + 1;
             yield return ShowText(number.ToString(), secondsPerCount);
         }
 
-        // Teks "GO!" tampil saat kamera MASIH diam di sudut pandang awal
         if (!string.IsNullOrEmpty(goText))
             yield return ShowText(goText, goDuration, goStartScale);
 
         if (countdownText != null) countdownText.gameObject.SetActive(false);
 
-        // Setelah GO!: game jalan lagi, pemain boleh bergerak, kamera mulai bergerak / zoom ke pemain
         RestoreTimeScale();
         IsIntroPlaying = false;
         InputLocked = false;
@@ -232,7 +252,6 @@ public class DynamicMultiplayerCamera : MonoBehaviour
         {
             t += Mathf.Min(Time.unscaledDeltaTime, MaxFrameTime);
 
-            // Efek "pop": angka muncul besar lalu mengecil
             if (countdownText != null)
             {
                 float pop = Mathf.Clamp01(t / 0.25f);
@@ -253,30 +272,54 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     //  GERAK & ZOOM
     // ------------------------------------------------------------
 
+    void Zoom()
+    {
+        float spread = GetGreatestDistance();
+        float targetDist;
+
+        if (zoomMode == ZoomMode.Zones)
+        {
+            targetDist = GetZoneTargetDistance();
+        }
+        else
+        {
+            float t = Mathf.InverseLerp(minPlayerSpread, maxPlayerSpread, spread);
+            targetDist = Mathf.Lerp(minCamDistance, maxCamDistance, t);
+        }
+
+        float speed = transitionTimer > 0f ? transitionZoomSpeed : zoomSpeed;
+        float lerpT = 1f - Mathf.Exp(-speed * Time.deltaTime); // smooth & tidak tergantung framerate
+
+        currentCamDistance = Mathf.Lerp(currentCamDistance, targetDist, lerpT);
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, fixedFOV, lerpT);
+
+        debugCurrentSpread = spread;
+        debugCurrentDistance = currentCamDistance;
+    }
+
     void Move()
     {
         Vector3 centerPoint = GetCenterPoint();
-        Vector3 targetPosition = centerPoint + offset;
 
-        // Batasi posisi kamera agar area luar map tidak terlihat
+        // Kamera berada di belakang titik tengah, sejauh currentCamDistance
+        Vector3 targetPosition = centerPoint + offset.normalized * currentCamDistance;
+
         if (useMapBounds) targetPosition = ClampToMap(targetPosition);
 
-        // Saat transisi setelah hitungan, kamera bergerak lebih pelan
         float activeSmoothTime = transitionTimer > 0f ? transitionSmoothTime : smoothTime;
 
-        // 1. Hitung pergerakan mulus kamera dasar
         currentSmoothPosition = Vector3.SmoothDamp(currentSmoothPosition, targetPosition, ref velocity, activeSmoothTime);
 
         Vector3 shakeOffset = Vector3.zero;
 
-        // 2. GETARAN HORIZONTAL TERUS MENERUS (Kanan-Kiri Saja)
+        // Getaran horizontal terus menerus
         if (enableContinuousShake)
         {
             float noiseX = (Mathf.PerlinNoise(Time.time * continuousShakeSpeed, 0f) * 2f) - 1f;
             shakeOffset += new Vector3(noiseX, 0f, 0f) * continuousShakePower;
         }
 
-        // 3. GETARAN KEJUTAN (Jika dipanggil TriggerShake saat tabrakan)
+        // Getaran kejutan (TriggerShake)
         if (shakeTimeRemaining > 0)
         {
             shakeTimeRemaining -= Time.deltaTime;
@@ -289,36 +332,18 @@ public class DynamicMultiplayerCamera : MonoBehaviour
             shakePower = Mathf.MoveTowards(shakePower, 0f, shakeFadeTime * Time.deltaTime);
         }
 
-        // 4. Gabungkan posisi kamera dasar dengan efek getaran
         transform.position = currentSmoothPosition + shakeOffset;
-    }
-
-    void Zoom()
-    {
-        float greatestDistance = GetGreatestDistance();
-
-        float activeDistance = Mathf.Max(0, greatestDistance - minDistanceBeforeZoom);
-        float zoomRatio = activeDistance / zoomLimiter;
-        float targetFOV = Mathf.Lerp(minZoom, maxZoom, zoomRatio);
-
-        // Saat transisi setelah hitungan, zoom lebih pelan
-        float zoomSpeed = transitionTimer > 0f ? transitionZoomSpeed : 3f;
-
-        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, targetFOV, Time.deltaTime * zoomSpeed);
     }
 
     // ------------------------------------------------------------
     //  BATAS MAP
     // ------------------------------------------------------------
 
-    // Tembak ray dari titik viewport ke bidang lantai (dihitung dari posisi 'origin',
-    // bukan posisi kamera yang sedang bergetar, supaya hasil clamp stabil).
     bool GroundPoint(float vx, float vy, Vector3 origin, out Vector3 point)
     {
         Vector3 dir = cam.ViewportPointToRay(new Vector3(vx, vy, 0f)).direction;
         point = Vector3.zero;
 
-        // Ray harus mengarah ke bawah agar bisa mengenai lantai
         if (dir.y >= -0.0001f) return false;
 
         float t = (groundY - origin.y) / dir.y;
@@ -332,52 +357,43 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     {
         Vector3 origin = currentSmoothPosition;
 
-        // Titik lantai di tengah layar + 4 sudut layar
         if (!GroundPoint(0.5f, 0.5f, origin, out Vector3 mid) ||
             !GroundPoint(0f, 0f, origin, out Vector3 bl) ||
             !GroundPoint(1f, 0f, origin, out Vector3 br) ||
             !GroundPoint(0f, 1f, origin, out Vector3 tl) ||
             !GroundPoint(1f, 1f, origin, out Vector3 tr))
         {
-            return desiredCamPos; // kamera tidak menghadap lantai, lewati clamp
+            return desiredCamPos;
         }
 
-        // Batas terluar area terlihat (ambil yang paling jauh dari 4 sudut)
         float visMinX = Mathf.Min(Mathf.Min(bl.x, br.x), Mathf.Min(tl.x, tr.x));
         float visMaxX = Mathf.Max(Mathf.Max(bl.x, br.x), Mathf.Max(tl.x, tr.x));
         float visMinZ = Mathf.Min(Mathf.Min(bl.z, br.z), Mathf.Min(tl.z, tr.z));
         float visMaxZ = Mathf.Max(Mathf.Max(bl.z, br.z), Mathf.Max(tl.z, tr.z));
 
-        // Seberapa jauh area terlihat melebar dari titik tengah layar
         float leftExt   = mid.x - visMinX + marginLeft;
         float rightExt  = visMaxX - mid.x + marginRight;
         float bottomExt = mid.z - visMinZ + marginBottom;
         float topExt    = visMaxZ - mid.z + marginTop;
 
-        // Selisih antara posisi kamera dan titik lantai yang dilihat di tengah layar
         Vector2 shift = new Vector2(mid.x - origin.x, mid.z - origin.z);
 
-        // Titik tengah layar (di lantai) kalau kamera berada di posisi yang diinginkan
         float viewX = desiredCamPos.x + shift.x;
         float viewZ = desiredCamPos.z + shift.y;
 
-        // Batas aman titik tengah layar
         float minX = mapMin.x + leftExt;
         float maxX = mapMax.x - rightExt;
         float minZ = mapMin.y + bottomExt;
         float maxZ = mapMax.y - topExt;
 
-        // Kalau area terlihat lebih besar dari map, taruh di tengah map
         viewX = (minX > maxX) ? (mapMin.x + mapMax.x) * 0.5f : Mathf.Clamp(viewX, minX, maxX);
         viewZ = (minZ > maxZ) ? (mapMin.y + mapMax.y) * 0.5f : Mathf.Clamp(viewZ, minZ, maxZ);
 
-        // Kembalikan ke posisi kamera
         desiredCamPos.x = viewX - shift.x;
         desiredCamPos.z = viewZ - shift.y;
         return desiredCamPos;
     }
 
-    // Gambar batas map di Scene view (pilih objek kamera untuk melihatnya)
     void OnDrawGizmosSelected()
     {
         if (!useMapBounds) return;
@@ -397,30 +413,79 @@ public class DynamicMultiplayerCamera : MonoBehaviour
     //  UTILITAS
     // ------------------------------------------------------------
 
-    Vector3 GetCenterPoint()
+    bool TryGetBounds(out Bounds bounds)
     {
-        if (targets.Count == 1) return targets[0].position;
+        bounds = new Bounds();
+        bool found = false;
 
-        var bounds = new Bounds(targets[0].position, Vector3.zero);
         for (int i = 0; i < targets.Count; i++)
         {
-            if (targets[i] != null) bounds.Encapsulate(targets[i].position);
-        }
+            if (targets[i] == null) continue;
 
-        return bounds.center;
+            if (!found)
+            {
+                bounds = new Bounds(targets[i].position, Vector3.zero);
+                found = true;
+            }
+            else
+            {
+                bounds.Encapsulate(targets[i].position);
+            }
+        }
+        return found;
     }
 
-    float GetGreatestDistance()
+    Vector3 GetCenterPoint()
     {
-        if (targets.Count <= 1) return 0f;
+        return TryGetBounds(out Bounds b) ? b.center : transform.position;
+    }
 
-        var bounds = new Bounds(targets[0].position, Vector3.zero);
+    // Tentukan jarak kamera dari zona tempat pemain berada.
+    // Aturan: kalau ada SATU saja pemain di zona Far -> pakai Far (prioritas).
+    //         Kalau tidak ada, tapi ada pemain di zona Near -> pakai Near.
+    //         Kalau tidak ada di zona manapun -> pakai pilihan outsideZonesUseFar.
+    float GetZoneTargetDistance()
+    {
+        bool anyFar = false, anyNear = false;
+        float farDist = farCamDistance;
+        float nearDist = nearCamDistance;
+
         for (int i = 0; i < targets.Count; i++)
         {
-            if (targets[i] != null) bounds.Encapsulate(targets[i].position);
+            if (targets[i] == null) continue;
+            Vector3 p = targets[i].position;
+
+            for (int z = 0; z < CameraZone.All.Count; z++)
+            {
+                CameraZone zone = CameraZone.All[z];
+                if (zone == null || !zone.Contains(p)) continue;
+
+                if (zone.type == CameraZone.ZoneType.Far)
+                {
+                    // Kalau beberapa zona Far aktif, ambil yang paling jauh
+                    float d = zone.customDistance > 0f ? zone.customDistance : farCamDistance;
+                    farDist = anyFar ? Mathf.Max(farDist, d) : d;
+                    anyFar = true;
+                }
+                else
+                {
+                    float d = zone.customDistance > 0f ? zone.customDistance : nearCamDistance;
+                    nearDist = anyNear ? Mathf.Max(nearDist, d) : d;
+                    anyNear = true;
+                }
+            }
         }
 
-        return bounds.size.magnitude;
+        if (anyFar) return farDist;
+        if (anyNear) return nearDist;
+        return outsideZonesUseFar ? farCamDistance : nearCamDistance;
+    }
+
+    // Jarak terjauh antar pemain, hanya di lantai (X dan Z), tinggi (Y) diabaikan
+    float GetGreatestDistance()
+    {
+        if (!TryGetBounds(out Bounds b)) return 0f;
+        return new Vector2(b.size.x, b.size.z).magnitude;
     }
 
     public void AddTarget(Transform newTarget)
