@@ -269,13 +269,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 104af8fc87cefa442b3779d271782411, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DynamicMultiplayerCamera
-  targets: []
+  targets:
+  - {fileID: 2947703078061721292, guid: 9ae14e9fe5886a44b8a4519a1c401d41, type: 3}
   offset: {x: 0, y: 5, z: -5}
   smoothTime: 0.5
-  minZoom: 30
-  maxZoom: 65
-  minDistanceBeforeZoom: 3
-  zoomLimiter: 25
+  fixedFOV: 45
+  minCamDistance: 12
+  maxCamDistance: 30
+  minPlayerSpread: 4
+  maxPlayerSpread: 25
+  zoomSpeed: 3
+  zoomMode: 1
+  nearCamDistance: 5
+  farCamDistance: 8
+  outsideZonesUseFar: 0
+  debugCurrentSpread: 0
+  debugCurrentDistance: 0
   enableContinuousShake: 1
   continuousShakePower: 0.5
   continuousShakeSpeed: 0.5
@@ -286,10 +295,11 @@ MonoBehaviour:
   marginLeft: -1
   marginRight: -1
   marginTop: -8
-  marginBottom: 0.5
+  marginBottom: 0
   useIntro: 1
   introFocus: {fileID: 0}
   introFOV: 55
+  introDistance: 7
   countdownFrom: 3
   countDownwards: 1
   secondsPerCount: 1
@@ -6507,6 +6517,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: a508dc08316208f4d993ac6eb1f06943, type: 3}
   m_PrefabInstance: {fileID: 1738546805}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1746769760
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1746769763}
+  - component: {fileID: 1746769762}
+  - component: {fileID: 1746769761}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1746769761
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746769760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39263953628800a4b93cd4cd139be139, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZone
+  type: 1
+  customDistance: 0
+--- !u!65 &1746769762
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746769760}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 3.364534, y: 1, z: 6.1954565}
+  m_Center: {x: -3.800091, y: 0, z: -0.53551865}
+--- !u!4 &1746769763
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746769760}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -4.3, y: 0.46, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1759847377
 GameObject:
   m_ObjectHideFlags: 0
@@ -6603,7 +6681,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7208fbbadc3f10d4cb3ccb61149d6733, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTimer
-  timeRemaining: 30
+  timeRemaining: 180
   timerIsRunning: 0
   timeText: {fileID: 1537081928}
   timeUpPanel: {fileID: 1473050456}
@@ -8442,3 +8520,4 @@ SceneRoots:
   - {fileID: 1288118166}
   - {fileID: 1759847378}
   - {fileID: 1173723318}
+  - {fileID: 1746769763}
