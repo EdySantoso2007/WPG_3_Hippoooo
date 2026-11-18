@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Cinemachine;
 
 public class MenutoLobbyTransition : MonoBehaviour
@@ -9,6 +10,10 @@ public class MenutoLobbyTransition : MonoBehaviour
     [SerializeField] private CanvasGroup lobbyCanvasGroup;
     [SerializeField] private CanvasGroup settingsCanvasGroup;
     [SerializeField] private CanvasGroup creditsCanvasGroup;
+
+    [Header("Room")]
+    [Tooltip("RoomManager di scene ini. Dipakai untuk menghapus player yang sudah join saat kembali dari lobby.")]
+    [SerializeField] private RoomManager roomManager;
 
     [Header("Fade & Delay Settings")]
     [SerializeField] private float fadeDuration = 0.8f;
@@ -24,9 +29,11 @@ public class MenutoLobbyTransition : MonoBehaviour
     [SerializeField] private CinemachineVirtualCamera settingsCamera;
     [SerializeField] private CinemachineVirtualCamera creditsCamera;
 
-    [Header("Mouse Parallax Settings")]
+    [Header("Parallax Settings (Mouse / Analog Kiri)")]
     [SerializeField] private float maxRotationAngle = 3f;
     [SerializeField] private float smoothSpeed = 5f;
+    [Tooltip("Analog di bawah nilai ini dianggap diam.")]
+    [SerializeField, Range(0.05f, 0.5f)] private float stickDeadzone = 0.2f;
 
     private CinemachineVirtualCamera activeCamera;
     private CanvasGroup activeCanvasGroup;
@@ -37,6 +44,7 @@ public class MenutoLobbyTransition : MonoBehaviour
     private Quaternion creditsCamInitialRot;
 
     private bool isTransitioning = false;
+    private bool useStick = false; // true = parallax mengikuti analog, false = mouse
 
     private void Start()
     {
@@ -61,27 +69,57 @@ public class MenutoLobbyTransition : MonoBehaviour
 
     private void Update()
     {
-        ApplyMouseParallax(menuCamera, menuCamInitialRot);
-        ApplyMouseParallax(lobbyCamera, lobbyCamInitialRot);
-        ApplyMouseParallax(settingsCamera, settingsCamInitialRot);
-        ApplyMouseParallax(creditsCamera, creditsCamInitialRot);
+        Vector2 input = GetParallaxInput();
+
+        ApplyParallax(menuCamera, menuCamInitialRot, input);
+        ApplyParallax(lobbyCamera, lobbyCamInitialRot, input);
+        ApplyParallax(settingsCamera, settingsCamInitialRot, input);
+        ApplyParallax(creditsCamera, creditsCamInitialRot, input);
+
+        // B = kembali ke menu dari panel selain Main Menu
+        Gamepad pad = Gamepad.current;
+        if (pad != null && pad.buttonEast.wasPressedThisFrame && activeCamera != menuCamera)
+            OnBackToMenuButtonPressed();
     }
 
-    private void ApplyMouseParallax(CinemachineVirtualCamera vcam, Quaternion initialRotation)
+    // Hasil -1..1 di tiap sumbu. Analog kalau baru digerakkan, mouse kalau mouse yang baru digerakkan.
+    private Vector2 GetParallaxInput()
+    {
+        Gamepad pad = Gamepad.current;
+        Mouse mouse = Mouse.current;
+
+        Vector2 stick = pad != null ? pad.leftStick.ReadValue() : Vector2.zero;
+
+        if (stick.magnitude > stickDeadzone) useStick = true;
+        if (mouse != null && mouse.delta.ReadValue().sqrMagnitude > 1f) useStick = false;
+
+        if (useStick && pad != null)
+        {
+            return stick.magnitude > stickDeadzone
+                ? Vector2.ClampMagnitude(stick, 1f)
+                : Vector2.zero; // analog dilepas -> kamera kembali ke tengah
+        }
+
+        if (mouse != null)
+        {
+            Vector2 pos = mouse.position.ReadValue();
+            float mx = Mathf.Clamp((pos.x / Screen.width - 0.5f) * 2f, -1f, 1f);
+            float my = Mathf.Clamp((pos.y / Screen.height - 0.5f) * 2f, -1f, 1f);
+            return new Vector2(mx, my);
+        }
+
+        return Vector2.zero;
+    }
+
+    private void ApplyParallax(CinemachineVirtualCamera vcam, Quaternion initialRotation, Vector2 input)
     {
         if (vcam == null || !vcam.gameObject.activeInHierarchy) return;
 
-        float mouseX = (Input.mousePosition.x / Screen.width - 0.5f) * 2f;
-        float mouseY = (Input.mousePosition.y / Screen.height - 0.5f) * 2f;
-
-        mouseX = Mathf.Clamp(mouseX, -1f, 1f);
-        mouseY = Mathf.Clamp(mouseY, -1f, 1f);
-
-        Quaternion targetRotation = initialRotation * Quaternion.Euler(-mouseY * maxRotationAngle, mouseX * maxRotationAngle, 0f);
+        Quaternion targetRotation = initialRotation * Quaternion.Euler(-input.y * maxRotationAngle, input.x * maxRotationAngle, 0f);
 
         vcam.transform.localRotation = Quaternion.Slerp(
-            vcam.transform.localRotation, 
-            targetRotation, 
+            vcam.transform.localRotation,
+            targetRotation,
             Time.deltaTime * smoothSpeed
         );
     }
@@ -113,6 +151,12 @@ public class MenutoLobbyTransition : MonoBehaviour
 
     public void OnBackToMenuButtonPressed()
     {
+        if (isTransitioning) return;
+
+        // Keluar dari lobby: hapus semua player yang sudah join
+        if (activeCamera == lobbyCamera && roomManager != null)
+            roomManager.ResetRoomState();
+
         NavigateTo(menuCamera, menuCanvasGroup);
     }
 
@@ -122,10 +166,8 @@ public class MenutoLobbyTransition : MonoBehaviour
         PlayButtonSFX();
 
         #if UNITY_EDITOR
-            // Jika di-run lewat Unity Editor, hentikan Play Mode
             UnityEditor.EditorApplication.isPlaying = false;
         #else
-            // Jika diketik/di-build jadi executable (.exe / apk), tutup aplikasi
             Application.Quit();
         #endif
     }

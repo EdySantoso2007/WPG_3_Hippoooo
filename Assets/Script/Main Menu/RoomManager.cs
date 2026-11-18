@@ -11,15 +11,11 @@ using UnityEngine.UI;
 //   cuma numpang lewat untuk mendeteksi device yang join, lalu langsung
 //   dihancurkan di OnPlayerJoined di bawah - jadi TIDAK akan kelihatan.
 // - Notification Behavior : Send Messages
-// - Joining Behavior      : sesuai kebutuhan (mis. Join Action Is Triggered,
-//   sesuai binding E/Kotak/X yang sudah di-setup)
+// - Joining Behavior      : sesuai kebutuhan
 //
-// PENTING - Cara mencegah join sebelum panel room aktif:
-// Script ini akan MEMATIKAN joining sejak Awake(). Supaya player baru bisa
-// join setelah panel room benar-benar muncul, panggil method
-// ActivateRoom() ini dari tombol/script yang menampilkan panel room
-// tersebut (misal di OnClick tombol PLAY di Main Menu, tambahkan satu
-// event lagi yang manggil RoomManager.ActivateRoom()).
+// Joining dimatikan sejak Awake(), dan dibuka otomatis begitu roomPanel aktif.
+// Saat tombol kembali ditekan, panggil ResetRoomState() untuk menghapus semua
+// player yang sudah join.
 [RequireComponent(typeof(PlayerInputManager))]
 public class RoomManager : MonoBehaviour
 {
@@ -37,87 +33,94 @@ public class RoomManager : MonoBehaviour
     public int minPlayersToStart = 1;
 
     [Header("Panel Room")]
-    [Tooltip("Panel room di Canvas. Begitu panel ini aktif (dibuka lewat mouse/keyboard/controller), " +
-             "joining otomatis dibuka - tidak perlu wiring ActivateRoom() manual lagi.")]
+    [Tooltip("Panel room di Canvas. Begitu panel ini aktif, joining otomatis dibuka.")]
     public GameObject roomPanel;
 
     private PlayerInputManager playerInputManager;
     private bool gameStarting = false;
-    private bool roomActive = false; // true setelah ActivateRoom() dipanggil
+    private bool roomActive = false;        // true setelah ActivateRoom() dipanggil
+    private bool blockAutoActivate = false; // true setelah reset, sampai panel room benar-benar tertutup
 
     private void Awake()
     {
         playerInputManager = GetComponent<PlayerInputManager>();
 
-        // Pastikan data room fresh setiap kali scene lobby ini dibuka dari awal
+        if (startButton != null)
+            startButton.onClick.AddListener(StartGame);
+
+        ResetRoomState();
+        blockAutoActivate = false; // reset awal bukan karena tombol kembali
+    }
+
+    // Hapus semua player yang sudah join, matikan joining, dan kembalikan UI room ke kondisi awal.
+    // Panggil dari tombol kembali.
+    public void ResetRoomState()
+    {
+        // Hapus data device yang sudah tercatat
         RoomBridge.ResetRoom();
 
-        // Matikan semua icon check di awal (belum ada yang join)
+        // Matikan semua icon check
         foreach (GameObject icon in checkIcons)
         {
             if (icon != null) icon.SetActive(false);
         }
 
+        // Tombol Start nonaktif lagi sampai ada yang join
         if (startButton != null)
-        {
             startButton.interactable = false;
-            startButton.onClick.AddListener(StartGame);
-        }
 
-        // Kunci joining sejak awal - baru dibuka lewat ActivateRoom()
-        playerInputManager.DisableJoining();
+        // Tutup joining sampai panel room dibuka lagi
+        roomActive = false;
+        blockAutoActivate = true;
+        if (playerInputManager != null)
+            playerInputManager.DisableJoining();
     }
 
-    // Panggil method ini dari tombol/logic yang menampilkan panel room
-    // (mis. tombol PLAY di Main Menu), supaya player baru bisa join
-    // SETELAH panel room benar-benar aktif/tampil.
+    // Bisa juga dipanggil manual dari tombol/logic yang menampilkan panel room.
     public void ActivateRoom()
     {
-        if (roomActive) return;
+        if (roomActive || gameStarting) return;
 
         roomActive = true;
 
         if (playerInputManager != null)
-        {
             playerInputManager.EnableJoining();
-        }
     }
 
     private void Update()
     {
         if (gameStarting) return;
 
-        // Otomatis buka joining begitu panel room aktif, apapun input yang
-        // dipakai untuk membukanya (klik mouse, keyboard, atau controller)
-        if (!roomActive && roomPanel != null && roomPanel.activeInHierarchy)
-        {
-            ActivateRoom();
-        }
+        // Panel room sudah tertutup -> boleh dibuka otomatis lagi saat panel muncul berikutnya
+        if (roomPanel != null && !roomPanel.activeInHierarchy)
+            blockAutoActivate = false;
 
-        // A = Start. HANYA diterima dari gamepad yang SUDAH join room,
-        // dan hanya jika syarat minimal player sudah terpenuhi.
-        if (RoomBridge.JoinedPlayers.Count >= minPlayersToStart)
+        // Otomatis buka joining begitu panel room aktif
+        if (!roomActive && !blockAutoActivate && roomPanel != null && roomPanel.activeInHierarchy)
+            ActivateRoom();
+
+        // Tombol A = Start (hanya jika room aktif dan syarat minimal player terpenuhi)
+        if (!roomActive) return;
+
+        var gamepad = Gamepad.current;
+        if (gamepad != null && gamepad.buttonSouth.wasPressedThisFrame)
         {
-            foreach (Gamepad pad in Gamepad.all)
-            {
-                if (pad.buttonSouth.wasPressedThisFrame && RoomBridge.IsDeviceJoined(pad))
-                {
-                    StartGame();
-                    break;
-                }
-            }
+            if (RoomBridge.JoinedPlayers.Count >= minPlayersToStart)
+                StartGame();
         }
     }
 
     // Dipanggil OTOMATIS oleh PlayerInputManager tiap ada device baru yang join.
-    // "playerInput" di sini cuma placeholder kosong (lihat catatan di atas)
-    // -> catat info device-nya saja, JANGAN dianggap sebagai player asli.
+    // "playerInput" di sini cuma placeholder kosong -> catat info device-nya saja.
     public void OnPlayerJoined(PlayerInput playerInput)
     {
-        if (gameStarting) return;
+        if (gameStarting)
+        {
+            Destroy(playerInput.gameObject);
+            return;
+        }
 
-        // Jaga-jaga: kalau entah bagaimana masih ada join yang lolos sebelum
-        // panel room aktif (mis. race condition frame pertama), tolak saja.
+        // Join yang lolos sebelum panel room aktif (atau setelah reset) ditolak
         if (!roomActive)
         {
             Debug.Log("Panel room belum aktif, join diabaikan.");
@@ -125,15 +128,7 @@ public class RoomManager : MonoBehaviour
             return;
         }
 
-        // Tolak kalau tidak ada device sama sekali yang terpasang
-        if (playerInput.devices.Count == 0)
-        {
-            Debug.Log("Join tanpa device, diabaikan.");
-            Destroy(playerInput.gameObject);
-            return;
-        }
-
-        // Tolak kalau device ini (keyboard/gamepad yang sama) sudah pernah join
+        // Tolak kalau device ini sudah pernah join
         if (IsDeviceAlreadyJoined(playerInput))
         {
             Debug.Log("Device ini sudah join sebelumnya, join baru diabaikan.");
@@ -149,47 +144,48 @@ public class RoomManager : MonoBehaviour
         }
 
         int index = RoomBridge.JoinedPlayers.Count;
-        string scheme = playerInput.currentControlScheme;
 
         // Simpan HANYA data control scheme & device fisiknya, bukan gameobject-nya
         RoomBridge.JoinedPlayers.Add(new JoinedPlayerData
         {
-            controlScheme = scheme,
+            controlScheme = playerInput.currentControlScheme,
             devices = playerInput.devices.ToArray()
         });
 
-        Debug.Log($"Device join ke room, urutan ke-{index + 1}, control scheme: {scheme}");
+        string scheme = playerInput.currentControlScheme;
 
-        // Placeholder ini tugasnya sudah selesai (cuma buat deteksi join),
-        // langsung hancurkan supaya tidak ada apapun yang muncul di layar
+        // Placeholder sudah selesai tugasnya
         Destroy(playerInput.gameObject);
 
         // Nyalakan icon check sesuai urutan warna join: Merah, Biru, Hijau, Kuning
         if (checkIcons[index] != null)
-        {
             checkIcons[index].SetActive(true);
-        }
 
         // Aktifkan tombol Start begitu syarat minimal jumlah player terpenuhi
         if (startButton != null && RoomBridge.JoinedPlayers.Count >= minPlayersToStart)
-        {
             startButton.interactable = true;
-        }
+
+        Debug.Log($"Device join ke room, urutan ke-{index + 1}, control scheme: {scheme}");
     }
 
-    // Cek apakah salah satu device fisik di playerInput ini sudah tercatat
-    // sebelumnya di RoomBridge (dari player lain yang sudah join duluan)
+    // Cek apakah salah satu device fisik di playerInput ini sudah tercatat di RoomBridge
     private bool IsDeviceAlreadyJoined(PlayerInput playerInput)
     {
-        foreach (InputDevice newDevice in playerInput.devices)
+        foreach (JoinedPlayerData data in RoomBridge.JoinedPlayers)
         {
-            if (RoomBridge.IsDeviceJoined(newDevice))
-                return true;
+            foreach (InputDevice newDevice in playerInput.devices)
+            {
+                foreach (InputDevice existingDevice in data.devices)
+                {
+                    if (newDevice.deviceId == existingDevice.deviceId)
+                        return true;
+                }
+            }
         }
         return false;
     }
 
-    // Dipanggil dari tombol START (sudah di-wire otomatis lewat AddListener di Awake)
+    // Dipanggil dari tombol START (di-wire lewat AddListener di Awake)
     private void StartGame()
     {
         if (gameStarting) return;
@@ -199,12 +195,8 @@ public class RoomManager : MonoBehaviour
 
         // Stop nerima player baru begitu game mau mulai
         if (playerInputManager != null)
-        {
             playerInputManager.DisableJoining();
-        }
 
-        // Load scene minigame. Prefab player yang sesungguhnya baru akan
-        // di-spawn di sana oleh PlayerManager, berdasarkan RoomBridge.JoinedPlayers
         SceneManager.LoadScene(gameSceneName);
     }
 }
