@@ -1082,7 +1082,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 382938558}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1090,7 +1090,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -15, y: 182}
+  m_AnchoredPosition: {x: -15, y: 165}
   m_SizeDelta: {x: 217.9, y: 88.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &382938560
@@ -1293,7 +1293,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 486752841}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1301,7 +1301,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -15, y: -47}
+  m_AnchoredPosition: {x: -15, y: -64}
   m_SizeDelta: {x: 217.9, y: 88.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &486752843
@@ -2201,7 +2201,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 814267172}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1.4813, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2209,7 +2209,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -15, y: 67}
+  m_AnchoredPosition: {x: -15, y: 50}
   m_SizeDelta: {x: 217.9, y: 88.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &814267174
@@ -2530,6 +2530,7 @@ GameObject:
   - component: {fileID: 892382320}
   - component: {fileID: 892382319}
   - component: {fileID: 892382321}
+  - component: {fileID: 892382322}
   m_Layer: 5
   m_Name: Mainmenu Panel
   m_TagString: Untagged
@@ -2608,6 +2609,32 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &892382322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 892382317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c9df0f14197a6348b16107a3df790c0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MenuGamepadNavigator
+  buttons:
+  - {fileID: 382938562}
+  - {fileID: 814267176}
+  - {fileID: 486752845}
+  - {fileID: 1426746784}
+  wrapAround: 1
+  hoverScale: 1.25
+  scaleSpeed: 12
+  stickThreshold: 0.6
+  inputDelayOnEnable: 0.2
+  canvasGroup: {fileID: 892382321}
+  audioSource: {fileID: 0}
+  moveSfx: {fileID: 0}
+  sfxVolume: 1
 --- !u!1 &896202689
 GameObject:
   m_ObjectHideFlags: 0
@@ -4500,7 +4527,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1426746780}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1.3292, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4508,7 +4535,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -15, y: -167}
+  m_AnchoredPosition: {x: -15, y: -184}
   m_SizeDelta: {x: 217.9, y: 88.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1426746782
@@ -5607,6 +5634,7 @@ MonoBehaviour:
   lobbyCanvasGroup: {fileID: 93054907}
   settingsCanvasGroup: {fileID: 660303503}
   creditsCanvasGroup: {fileID: 1048820192}
+  roomManager: {fileID: 961637856}
   fadeDuration: 0.8
   delayBeforePanelFadeIn: 0.5
   sfxAudioSource: {fileID: 1452724651}
@@ -5617,6 +5645,7 @@ MonoBehaviour:
   creditsCamera: {fileID: 1619742805}
   maxRotationAngle: 3
   smoothSpeed: 5
+  stickDeadzone: 0.2
 --- !u!4 &1668719728
 Transform:
   m_ObjectHideFlags: 0
