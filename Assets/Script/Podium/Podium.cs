@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 public class Podium : MonoBehaviour
 {
@@ -40,12 +40,19 @@ public class Podium : MonoBehaviour
 
     [Header("Pindah ke Scene Berikutnya (Scene Dipecat)")]
     public string nextSceneName = "";
-    [Tooltip("Centang: otomatis pindah setelah semua karakter tampil + jeda di bawah.")]
-    public bool autoLoadNextScene = true;
-    [Tooltip("Lama podium dilihat (detik) setelah juara 1 muncul, sebelum pindah scene.")]
+    [Tooltip("Centang: otomatis pindah setelah semua karakter tampil + jeda di bawah. " +
+             "Matikan kalau pindah scene hanya lewat tombol controller.")]
+    public bool autoLoadNextScene = false;
+    [Tooltip("Lama podium dilihat (detik) setelah juara 1 muncul, sebelum pindah scene (kalau auto-load aktif).")]
     public float delayBeforeNextScene = 5f;
-    [Tooltip("(Opsional) Tombol untuk melewati podium. Muncul setelah semua karakter tampil.")]
-    public Button continueButton;
+
+    [Header("Input Lanjut (Controller)")]
+    [Tooltip("(Opsional) Objek petunjuk, misal gambar/teks 'Tekan Y'. Muncul setelah semua karakter tampil.")]
+    public GameObject continuePrompt;
+    [Tooltip("Tombol controller untuk lanjut. Y di Xbox = North (Triangle di PlayStation).")]
+    public bool useButtonNorth = true;
+    [Tooltip("Hanya untuk testing di editor tanpa controller: Enter di keyboard juga bisa lanjut.")]
+    public bool keyboardFallbackForTesting = true;
 
     [Header("Transisi Iris (Podium -> Dipecat)")]
     [Tooltip("Drag objek IrisTransition dari scene Podium ini. Kosong = langsung pindah scene tanpa transisi.")]
@@ -59,18 +66,15 @@ public class Podium : MonoBehaviour
     [Range(2, 4)] public int testPlayerCount = 4;
 
     private bool isLoading;
+    private bool inputReady; // true setelah semua karakter tampil
 
     void Start()
     {
         // Jaga-jaga kalau scene sebelumnya meninggalkan game dalam keadaan freeze
         Time.timeScale = 1f;
 
-        if (continueButton != null)
-        {
-            continueButton.onClick.RemoveAllListeners();
-            continueButton.onClick.AddListener(LoadNextScene);
-            continueButton.gameObject.SetActive(false); // muncul setelah semua karakter tampil
-        }
+        if (continuePrompt != null)
+            continuePrompt.SetActive(false); // muncul setelah semua karakter tampil
 
         if (!ScoreBridge.HasResults)
         {
@@ -115,6 +119,33 @@ public class Podium : MonoBehaviour
         StartCoroutine(PodiumRoutine(spawned));
     }
 
+    void Update()
+    {
+        if (!inputReady || isLoading) return;
+
+        if (ContinuePressed())
+            LoadNextScene();
+    }
+
+    // Y (buttonNorth) di salah satu controller yang terhubung.
+    private bool ContinuePressed()
+    {
+        if (useButtonNorth)
+        {
+            foreach (Gamepad pad in Gamepad.all)
+            {
+                if (pad.buttonNorth.wasPressedThisFrame)
+                    return true;
+            }
+        }
+
+        if (keyboardFallbackForTesting && Keyboard.current != null &&
+            Keyboard.current.enterKey.wasPressedThisFrame)
+            return true;
+
+        return false;
+    }
+
     // ---------- Alur utama ----------
 
     private IEnumerator PodiumRoutine(List<GameObject> spawned)
@@ -146,7 +177,9 @@ public class Podium : MonoBehaviour
             }
         }
 
-        if (continueButton != null) continueButton.gameObject.SetActive(true);
+        // Semua karakter sudah tampil: petunjuk muncul & input Y mulai diterima
+        if (continuePrompt != null) continuePrompt.SetActive(true);
+        inputReady = true;
 
         if (autoLoadNextScene && !string.IsNullOrEmpty(nextSceneName))
         {
@@ -176,7 +209,7 @@ public class Podium : MonoBehaviour
             t += Time.deltaTime;
             float k = Mathf.Clamp01(t / popDuration);
 
-            // Ease-out-back: sedikit membesar melewati ukuran asli lalu pas
+            // Ease-out-back: sedikit membesar melewati ukuran asli lalu mengecil pas
             const float c1 = 1.70158f;
             const float c3 = c1 + 1f;
             float e = 1f + c3 * Mathf.Pow(k - 1f, 3f) + c1 * Mathf.Pow(k - 1f, 2f);
@@ -212,7 +245,7 @@ public class Podium : MonoBehaviour
 
     // ---------- Pindah scene ----------
 
-    // Dipanggil tombol Continue atau auto-load. Aman dipanggil berkali-kali (isLoading).
+    // Dipanggil tombol Y atau auto-load. Aman dipanggil berkali-kali (isLoading).
     public void LoadNextScene()
     {
         if (isLoading) return;
@@ -230,8 +263,8 @@ public class Podium : MonoBehaviour
     // Iris menutup (layar jadi hitam) -> baru scene Dipecat dimuat.
     private IEnumerator LoadNextSceneRoutine()
     {
-        // Cegah klik ganda selama transisi
-        if (continueButton != null) continueButton.interactable = false;
+        // Petunjuk disembunyikan selama transisi
+        if (continuePrompt != null) continuePrompt.SetActive(false);
 
         if (iris != null)
             yield return iris.Close(irisCloseDuration);
