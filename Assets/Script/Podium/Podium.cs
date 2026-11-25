@@ -47,10 +47,10 @@ public class Podium : MonoBehaviour
     public float delayBeforeNextScene = 5f;
 
     [Header("Input Lanjut (Controller)")]
-    [Tooltip("(Opsional) Objek petunjuk, misal gambar/teks 'Tekan Y'. Muncul setelah semua karakter tampil.")]
+    [Tooltip("(Opsional) Objek petunjuk, misal gambar/teks 'Tekan A'. Muncul setelah semua karakter tampil.")]
     public GameObject continuePrompt;
-    [Tooltip("Tombol controller untuk lanjut. Y di Xbox = North (Triangle di PlayStation).")]
-    public bool useButtonNorth = true;
+    [Tooltip("Tombol controller untuk lanjut. A di Xbox = South (Cross/X di PlayStation).")]
+    public bool useButtonSouth = true;
     [Tooltip("Hanya untuk testing di editor tanpa controller: Enter di keyboard juga bisa lanjut.")]
     public bool keyboardFallbackForTesting = true;
 
@@ -127,14 +127,14 @@ public class Podium : MonoBehaviour
             LoadNextScene();
     }
 
-    // Y (buttonNorth) di salah satu controller yang terhubung.
+    // A (buttonSouth) di salah satu controller yang terhubung.
     private bool ContinuePressed()
     {
-        if (useButtonNorth)
+        if (useButtonSouth)
         {
             foreach (Gamepad pad in Gamepad.all)
             {
-                if (pad.buttonNorth.wasPressedThisFrame)
+                if (pad.buttonSouth.wasPressedThisFrame)
                     return true;
             }
         }
@@ -177,7 +177,7 @@ public class Podium : MonoBehaviour
             }
         }
 
-        // Semua karakter sudah tampil: petunjuk muncul & input Y mulai diterima
+        // Semua karakter sudah tampil: petunjuk muncul & input A mulai diterima
         if (continuePrompt != null) continuePrompt.SetActive(true);
         inputReady = true;
 
@@ -245,7 +245,7 @@ public class Podium : MonoBehaviour
 
     // ---------- Pindah scene ----------
 
-    // Dipanggil tombol Y atau auto-load. Aman dipanggil berkali-kali (isLoading).
+    // Dipanggil tombol A atau auto-load. Aman dipanggil berkali-kali (isLoading).
     public void LoadNextScene()
     {
         if (isLoading) return;
